@@ -1,0 +1,1093 @@
+[
+  {
+    "id": "mrtr-elicitation-round-trip",
+    "requirements": [
+      "P16.01",
+      "P16.02"
+    ],
+    "profile": "conformance",
+    "clientCapabilities": {
+      "elicitation": {}
+    },
+    "before": [
+      {
+        "request": {
+          "mcpMethod": "tools/call",
+          "mcpName": "test_input_required_result_elicitation",
+          "id": "mrtr-elicit-1",
+          "params": {
+            "name": "test_input_required_result_elicitation",
+            "arguments": {}
+          }
+        },
+        "assert": {
+          "status": 200,
+          "resultType": "input_required",
+          "resultPresentPaths": [
+            "inputRequests.user_name",
+            "requestState"
+          ],
+          "stringResultPaths": [
+            "requestState"
+          ]
+        },
+        "save": {
+          "state": "result.requestState"
+        }
+      }
+    ],
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_input_required_result_elicitation",
+      "id": "mrtr-elicit-2",
+      "params": {
+        "name": "test_input_required_result_elicitation",
+        "arguments": {},
+        "requestState": "${state}",
+        "inputResponses": {
+          "user_name": {
+            "action": "accept",
+            "content": {
+              "name": "Alice"
+            }
+          },
+          "unknown": {
+            "action": "accept",
+            "content": {
+              "ignored": true
+            }
+          }
+        }
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "resultPath": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Hello, Alice!"
+          }
+        ]
+      }
+    },
+    "ignorePaths": [
+      "$before.0.body.result.requestState"
+    ]
+  },
+  {
+    "id": "mrtr-multiple-inputs",
+    "requirements": [
+      "P16.01",
+      "P16.03"
+    ],
+    "profile": "conformance",
+    "clientCapabilities": {
+      "elicitation": {},
+      "sampling": {},
+      "roots": {}
+    },
+    "before": [
+      {
+        "request": {
+          "mcpMethod": "tools/call",
+          "mcpName": "test_input_required_result_multiple_inputs",
+          "id": "mrtr-multi-1",
+          "params": {
+            "name": "test_input_required_result_multiple_inputs",
+            "arguments": {}
+          }
+        },
+        "assert": {
+          "status": 200,
+          "resultType": "input_required",
+          "resultPresentPaths": [
+            "inputRequests.user_name",
+            "inputRequests.greeting",
+            "inputRequests.client_roots",
+            "requestState"
+          ]
+        },
+        "save": {
+          "state": "result.requestState"
+        }
+      }
+    ],
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_input_required_result_multiple_inputs",
+      "id": "mrtr-multi-2",
+      "params": {
+        "name": "test_input_required_result_multiple_inputs",
+        "arguments": {},
+        "requestState": "${state}",
+        "inputResponses": {
+          "user_name": {
+            "action": "accept",
+            "content": {
+              "name": "Alice"
+            }
+          },
+          "greeting": {
+            "role": "assistant",
+            "content": {
+              "type": "text",
+              "text": "Hello"
+            },
+            "model": "fixture",
+            "stopReason": "endTurn"
+          },
+          "client_roots": {
+            "roots": [
+              {
+                "uri": "file:///tmp",
+                "name": "tmp"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete"
+    },
+    "ignorePaths": [
+      "$before.0.body.result.requestState"
+    ]
+  },
+  {
+    "id": "tasks-required-capability",
+    "requirements": [
+      "P18.01"
+    ],
+    "profile": "tasks",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "failing_job",
+      "id": "task-required-capability",
+      "params": {
+        "name": "failing_job",
+        "arguments": {}
+      }
+    },
+    "assert": {
+      "status": 400,
+      "errorCode": -32021,
+      "errorDataPath": {
+        "requiredCapabilities": {
+          "extensions": {
+            "io.modelcontextprotocol/tasks": {}
+          }
+        }
+      }
+    },
+    "ignorePaths": [
+      "$body.error.message"
+    ]
+  },
+  {
+    "id": "tasks-create-and-complete",
+    "requirements": [
+      "P18.01",
+      "P18.02",
+      "P18.03"
+    ],
+    "profile": "tasks",
+    "clientCapabilities": {
+      "extensions": {
+        "io.modelcontextprotocol/tasks": {}
+      }
+    },
+    "steps": [
+      {
+        "request": {
+          "mcpMethod": "tools/call",
+          "mcpName": "slow_compute",
+          "id": "task-create",
+          "params": {
+            "name": "slow_compute",
+            "arguments": {
+              "seconds": 0,
+              "label": "raw"
+            }
+          }
+        },
+        "assert": {
+          "status": 200,
+          "resultType": "task",
+          "resultPresentPaths": [
+            "taskId",
+            "status",
+            "createdAt",
+            "lastUpdatedAt",
+            "ttlMs",
+            "pollIntervalMs"
+          ],
+          "stringResultPaths": [
+            "taskId",
+            "createdAt",
+            "lastUpdatedAt"
+          ]
+        },
+        "save": {
+          "task": "result.taskId"
+        }
+      },
+      {
+        "request": {
+          "mcpMethod": "tasks/get",
+          "mcpName": "${task}",
+          "id": "task-get-complete",
+          "params": {
+            "taskId": "${task}"
+          }
+        },
+        "until": {
+          "resultPath": "status",
+          "equals": "completed"
+        },
+        "maxPolls": 20,
+        "intervalMs": 100,
+        "assert": {
+          "status": 200,
+          "resultType": "complete",
+          "resultPath": {
+            "status": "completed"
+          },
+          "resultPresentPaths": [
+            "result.content"
+          ]
+        }
+      }
+    ],
+    "ignorePaths": [
+      "$steps.0.body.result.taskId",
+      "$steps.0.body.result.createdAt",
+      "$steps.0.body.result.lastUpdatedAt",
+      "$steps.1.body.result.taskId",
+      "$steps.1.body.result.createdAt",
+      "$steps.1.body.result.lastUpdatedAt",
+      "$body.result.taskId",
+      "$body.result.createdAt",
+      "$body.result.lastUpdatedAt",
+      "$steps.0.body.result.content"
+    ]
+  },
+  {
+    "id": "tasks-input-update",
+    "requirements": [
+      "P18.02",
+      "P18.04"
+    ],
+    "profile": "tasks",
+    "clientCapabilities": {
+      "elicitation": {},
+      "extensions": {
+        "io.modelcontextprotocol/tasks": {}
+      }
+    },
+    "steps": [
+      {
+        "request": {
+          "mcpMethod": "tools/call",
+          "mcpName": "confirm_delete",
+          "id": "task-input-create",
+          "params": {
+            "name": "confirm_delete",
+            "arguments": {
+              "filename": "raw.txt"
+            }
+          }
+        },
+        "assert": {
+          "status": 200,
+          "resultType": "task",
+          "resultPresentPaths": [
+            "taskId"
+          ]
+        },
+        "save": {
+          "task": "result.taskId"
+        }
+      },
+      {
+        "request": {
+          "mcpMethod": "tasks/get",
+          "mcpName": "${task}",
+          "id": "task-input-poll",
+          "params": {
+            "taskId": "${task}"
+          }
+        },
+        "until": {
+          "resultPath": "status",
+          "equals": "input_required"
+        },
+        "maxPolls": 20,
+        "intervalMs": 100,
+        "assert": {
+          "status": 200,
+          "resultType": "complete",
+          "resultPath": {
+            "status": "input_required"
+          },
+          "resultPresentPaths": [
+            "inputRequests.confirm"
+          ]
+        }
+      },
+      {
+        "request": {
+          "mcpMethod": "tasks/update",
+          "mcpName": "${task}",
+          "id": "task-input-update",
+          "params": {
+            "taskId": "${task}",
+            "inputResponses": {
+              "confirm": {
+                "action": "accept",
+                "content": {
+                  "confirm": true
+                }
+              },
+              "unknown": {
+                "action": "accept",
+                "content": {
+                  "ignored": true
+                }
+              }
+            }
+          }
+        },
+        "assert": {
+          "status": 200,
+          "resultType": "complete"
+        }
+      },
+      {
+        "request": {
+          "mcpMethod": "tasks/get",
+          "mcpName": "${task}",
+          "id": "task-input-complete",
+          "params": {
+            "taskId": "${task}"
+          }
+        },
+        "until": {
+          "resultPath": "status",
+          "equals": "completed"
+        },
+        "maxPolls": 20,
+        "intervalMs": 100,
+        "assert": {
+          "status": 200,
+          "resultType": "complete",
+          "resultPath": {
+            "status": "completed"
+          },
+          "resultPresentPaths": [
+            "result.content"
+          ]
+        }
+      }
+    ],
+    "ignorePaths": [
+      "$steps.0.body.result.taskId",
+      "$steps.0.body.result.createdAt",
+      "$steps.0.body.result.lastUpdatedAt",
+      "$steps.1.body.result.taskId",
+      "$steps.1.body.result.createdAt",
+      "$steps.1.body.result.lastUpdatedAt",
+      "$steps.3.body.result.taskId",
+      "$steps.3.body.result.createdAt",
+      "$steps.3.body.result.lastUpdatedAt",
+      "$body.result.taskId",
+      "$body.result.createdAt",
+      "$body.result.lastUpdatedAt",
+      "$steps.0.body.result.content"
+    ]
+  },
+  {
+    "id": "tasks-cancel",
+    "requirements": [
+      "P18.02",
+      "P18.05"
+    ],
+    "profile": "tasks",
+    "clientCapabilities": {
+      "extensions": {
+        "io.modelcontextprotocol/tasks": {}
+      }
+    },
+    "steps": [
+      {
+        "request": {
+          "mcpMethod": "tools/call",
+          "mcpName": "slow_compute",
+          "id": "task-cancel-create",
+          "params": {
+            "name": "slow_compute",
+            "arguments": {
+              "seconds": 60,
+              "label": "cancel"
+            }
+          }
+        },
+        "assert": {
+          "status": 200,
+          "resultType": "task"
+        },
+        "save": {
+          "task": "result.taskId"
+        }
+      },
+      {
+        "request": {
+          "mcpMethod": "tasks/cancel",
+          "mcpName": "${task}",
+          "id": "task-cancel-ack",
+          "params": {
+            "taskId": "${task}"
+          }
+        },
+        "assert": {
+          "status": 200,
+          "resultType": "complete"
+        }
+      },
+      {
+        "request": {
+          "mcpMethod": "tasks/get",
+          "mcpName": "${task}",
+          "id": "task-cancel-get",
+          "params": {
+            "taskId": "${task}"
+          }
+        },
+        "assert": {
+          "status": 200,
+          "resultType": "complete",
+          "resultPath": {
+            "status": "cancelled"
+          }
+        }
+      }
+    ],
+    "ignorePaths": [
+      "$steps.0.body.result.taskId",
+      "$steps.0.body.result.createdAt",
+      "$steps.0.body.result.lastUpdatedAt",
+      "$steps.2.body.result.taskId",
+      "$steps.2.body.result.createdAt",
+      "$steps.2.body.result.lastUpdatedAt",
+      "$body.result.taskId",
+      "$body.result.createdAt",
+      "$body.result.lastUpdatedAt",
+      "$steps.0.body.result.content"
+    ]
+  },
+  {
+    "id": "mrtr-tampered-state",
+    "requirements": [
+      "P16.01",
+      "P16.02"
+    ],
+    "profile": "conformance",
+    "clientCapabilities": {
+      "elicitation": {}
+    },
+    "request": {
+      "mcpMethod": "tools/call",
+      "id": "tampered",
+      "params": {
+        "name": "test_input_required_result_elicitation",
+        "arguments": {},
+        "requestState": "invented-invalid-state",
+        "inputResponses": {
+          "user_name": {
+            "action": "accept",
+            "content": {
+              "name": "Alice"
+            }
+          }
+        }
+      },
+      "mcpName": "test_input_required_result_elicitation"
+    },
+    "assert": {
+      "status": 200,
+      "errorCode": -32602
+    },
+    "ignorePaths": [
+      "$body.error.data"
+    ],
+    "referenceAssert": {
+      "bodyPath": {
+        "error.data": {
+          "reason": "invalid_request_state"
+        }
+      }
+    }
+  },
+  {
+    "id": "mrtr-cross-principal-state",
+    "requirements": [
+      "P16.01",
+      "P16.02",
+      "P10.03"
+    ],
+    "profile": "conformance",
+    "clientCapabilities": {
+      "elicitation": {}
+    },
+    "before": [
+      {
+        "request": {
+          "mcpMethod": "tools/call",
+          "mcpName": "test_input_required_result_elicitation",
+          "id": "mrtr-elicit-1",
+          "params": {
+            "name": "test_input_required_result_elicitation",
+            "arguments": {}
+          },
+          "token": "alice-read"
+        },
+        "assert": {
+          "status": 200,
+          "resultType": "input_required",
+          "resultPresentPaths": [
+            "inputRequests.user_name",
+            "requestState"
+          ],
+          "stringResultPaths": [
+            "requestState"
+          ]
+        },
+        "save": {
+          "state": "result.requestState"
+        }
+      }
+    ],
+    "request": {
+      "mcpMethod": "tools/call",
+      "id": "other-principal",
+      "params": {
+        "name": "test_input_required_result_elicitation",
+        "arguments": {},
+        "requestState": "${state}",
+        "inputResponses": {
+          "user_name": {
+            "action": "accept",
+            "content": {
+              "name": "Bob"
+            }
+          }
+        }
+      },
+      "mcpName": "test_input_required_result_elicitation",
+      "token": "bob-write"
+    },
+    "ignorePaths": [
+      "$before.0.body.result.requestState",
+      "$body.error.data"
+    ],
+    "assert": {
+      "status": 200,
+      "errorCode": -32602
+    },
+    "referenceAssert": {
+      "bodyPath": {
+        "error.data": {
+          "reason": "invalid_request_state"
+        }
+      }
+    }
+  },
+  {
+    "id": "tasks-cross-principal-get",
+    "requirements": [
+      "P18.01",
+      "P18.02",
+      "P10.03"
+    ],
+    "profile": "tasks",
+    "clientCapabilities": {
+      "extensions": {
+        "io.modelcontextprotocol/tasks": {}
+      }
+    },
+    "before": [
+      {
+        "request": {
+          "mcpMethod": "tools/call",
+          "mcpName": "slow_compute",
+          "id": "task-create",
+          "params": {
+            "name": "slow_compute",
+            "arguments": {
+              "seconds": 0,
+              "label": "raw"
+            }
+          },
+          "token": "alice-write"
+        },
+        "assert": {
+          "status": 200,
+          "resultType": "task",
+          "resultPresentPaths": [
+            "taskId",
+            "status",
+            "createdAt",
+            "lastUpdatedAt",
+            "ttlMs",
+            "pollIntervalMs"
+          ],
+          "stringResultPaths": [
+            "taskId",
+            "createdAt",
+            "lastUpdatedAt"
+          ]
+        },
+        "save": {
+          "task": "result.taskId"
+        }
+      }
+    ],
+    "request": {
+      "mcpMethod": "tasks/get",
+      "id": "other-task-owner",
+      "params": {
+        "taskId": "${task}"
+      },
+      "mcpName": "${task}",
+      "token": "bob-write"
+    },
+    "ignorePaths": [
+      "$before.0.body.result.taskId",
+      "$before.0.body.result.createdAt",
+      "$before.0.body.result.lastUpdatedAt",
+      "$before.0.body.result.content"
+    ],
+    "assert": {
+      "status": 200,
+      "errorCode": -32602
+    }
+  },
+  {
+    "id": "tasks-domain-error",
+    "requirements": [
+      "P18.01",
+      "P18.02",
+      "P18.03"
+    ],
+    "profile": "tasks",
+    "clientCapabilities": {
+      "extensions": {
+        "io.modelcontextprotocol/tasks": {}
+      }
+    },
+    "steps": [
+      {
+        "request": {
+          "mcpMethod": "tools/call",
+          "id": "tasks-domain-error-create",
+          "params": {
+            "name": "failing_job",
+            "arguments": {}
+          },
+          "mcpName": "failing_job"
+        },
+        "assert": {
+          "status": 200,
+          "resultType": "task",
+          "resultPresentPaths": [
+            "taskId",
+            "status",
+            "createdAt",
+            "lastUpdatedAt",
+            "ttlMs",
+            "pollIntervalMs"
+          ],
+          "stringResultPaths": [
+            "taskId",
+            "createdAt",
+            "lastUpdatedAt"
+          ]
+        },
+        "save": {
+          "task": "result.taskId"
+        }
+      },
+      {
+        "request": {
+          "mcpMethod": "tasks/get",
+          "mcpName": "${task}",
+          "id": "tasks-domain-error-get",
+          "params": {
+            "taskId": "${task}"
+          }
+        },
+        "until": {
+          "resultPath": "status",
+          "equals": "completed"
+        },
+        "maxPolls": 20,
+        "intervalMs": 100,
+        "assert": {
+          "status": 200,
+          "resultType": "complete",
+          "resultPath": {
+            "status": "completed",
+            "result.isError": true,
+            "result.content": [
+              {
+                "type": "text",
+                "text": "intentional tool failure"
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "ignorePaths": [
+      "$steps.0.body.result.taskId",
+      "$steps.0.body.result.createdAt",
+      "$steps.0.body.result.lastUpdatedAt",
+      "$steps.1.body.result.taskId",
+      "$steps.1.body.result.createdAt",
+      "$steps.1.body.result.lastUpdatedAt",
+      "$body.result.taskId",
+      "$body.result.createdAt",
+      "$body.result.lastUpdatedAt",
+      "$steps.0.body.result.content"
+    ]
+  },
+  {
+    "id": "tasks-protocol-error",
+    "requirements": [
+      "P18.01",
+      "P18.02",
+      "P18.03"
+    ],
+    "profile": "tasks",
+    "clientCapabilities": {
+      "extensions": {
+        "io.modelcontextprotocol/tasks": {}
+      }
+    },
+    "steps": [
+      {
+        "request": {
+          "mcpMethod": "tools/call",
+          "id": "tasks-protocol-error-create",
+          "params": {
+            "name": "protocol_error_job",
+            "arguments": {}
+          },
+          "mcpName": "protocol_error_job"
+        },
+        "assert": {
+          "status": 200,
+          "resultType": "task",
+          "resultPresentPaths": [
+            "taskId",
+            "status",
+            "createdAt",
+            "lastUpdatedAt",
+            "ttlMs",
+            "pollIntervalMs"
+          ],
+          "stringResultPaths": [
+            "taskId",
+            "createdAt",
+            "lastUpdatedAt"
+          ]
+        },
+        "save": {
+          "task": "result.taskId"
+        }
+      },
+      {
+        "request": {
+          "mcpMethod": "tasks/get",
+          "mcpName": "${task}",
+          "id": "tasks-protocol-error-get",
+          "params": {
+            "taskId": "${task}"
+          }
+        },
+        "until": {
+          "resultPath": "status",
+          "equals": "failed"
+        },
+        "maxPolls": 20,
+        "intervalMs": 100,
+        "assert": {
+          "status": 200,
+          "resultType": "complete",
+          "resultPath": {
+            "status": "failed",
+            "error": {
+              "code": -32603,
+              "message": "Intentional protocol failure"
+            }
+          }
+        }
+      }
+    ],
+    "ignorePaths": [
+      "$steps.0.body.result.taskId",
+      "$steps.0.body.result.createdAt",
+      "$steps.0.body.result.lastUpdatedAt",
+      "$steps.1.body.result.taskId",
+      "$steps.1.body.result.createdAt",
+      "$steps.1.body.result.lastUpdatedAt",
+      "$body.result.taskId",
+      "$body.result.createdAt",
+      "$body.result.lastUpdatedAt",
+      "$steps.0.body.result.content"
+    ]
+  },
+  {
+    "id": "tasks-poll-capability-not-sticky",
+    "requirements": [
+      "P18.01",
+      "P18.02",
+      "P16.01"
+    ],
+    "profile": "tasks",
+    "clientCapabilities": {
+      "elicitation": {},
+      "extensions": {
+        "io.modelcontextprotocol/tasks": {}
+      }
+    },
+    "steps": [
+      {
+        "request": {
+          "mcpMethod": "tools/call",
+          "mcpName": "confirm_delete",
+          "id": "task-input-create",
+          "params": {
+            "name": "confirm_delete",
+            "arguments": {
+              "filename": "raw.txt"
+            }
+          }
+        },
+        "assert": {
+          "status": 200,
+          "resultType": "task",
+          "resultPresentPaths": [
+            "taskId"
+          ]
+        },
+        "save": {
+          "task": "result.taskId"
+        }
+      },
+      {
+        "request": {
+          "mcpMethod": "tasks/get",
+          "mcpName": "${task}",
+          "id": "task-input-capable-poll",
+          "params": {
+            "taskId": "${task}"
+          }
+        },
+        "until": {
+          "resultPath": "status",
+          "equals": "input_required"
+        },
+        "maxPolls": 20,
+        "intervalMs": 100,
+        "assert": {
+          "status": 200,
+          "resultType": "complete",
+          "resultPath": {
+            "status": "input_required"
+          },
+          "resultPresentPaths": [
+            "inputRequests.confirm"
+          ]
+        }
+      },
+      {
+        "request": {
+          "mcpMethod": "tasks/get",
+          "mcpName": "${task}",
+          "id": "task-input-downgraded-poll",
+          "clientCapabilities": {
+            "extensions": {
+              "io.modelcontextprotocol/tasks": {}
+            }
+          },
+          "params": {
+            "taskId": "${task}"
+          }
+        },
+        "assert": {
+          "status": 400,
+          "errorCode": -32021,
+          "errorDataPath": {
+            "requiredCapabilities": {
+              "elicitation": {}
+            }
+          }
+        }
+      }
+    ],
+    "ignorePaths": [
+      "$steps.0.body.result.taskId",
+      "$steps.0.body.result.createdAt",
+      "$steps.0.body.result.lastUpdatedAt",
+      "$steps.1.body.result.taskId",
+      "$steps.1.body.result.createdAt",
+      "$steps.1.body.result.lastUpdatedAt",
+      "$steps.0.body.result.content",
+      "$body.error.message",
+      "$steps.2.body.error.message"
+    ]
+  },
+  {
+    "id": "tasks-suppress-request-notifications",
+    "requirements": [
+      "P18.01",
+      "P18.02",
+      "P17.01",
+      "P17.02"
+    ],
+    "profile": "tasks",
+    "clientCapabilities": {
+      "extensions": {
+        "io.modelcontextprotocol/tasks": {}
+      }
+    },
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_task_notification_suppression",
+      "id": "silent-task-create",
+      "params": {
+        "name": "test_task_notification_suppression",
+        "arguments": {}
+      },
+      "meta": {
+        "progressToken": "task-must-not-progress",
+        "io.modelcontextprotocol/logLevel": "info"
+      }
+    },
+    "assert": {
+      "status": 200,
+      "contentType": "text/event-stream",
+      "resultType": "task",
+      "resultPath": {
+        "status": "working"
+      },
+      "resultPresentPaths": [
+        "taskId",
+        "createdAt",
+        "lastUpdatedAt"
+      ],
+      "forbiddenMethods": [
+        "notifications/progress",
+        "notifications/message"
+      ],
+      "terminalId": "silent-task-create"
+    },
+    "ignorePaths": [
+      "$body.result.taskId",
+      "$body.result.createdAt",
+      "$body.result.lastUpdatedAt",
+      "$body.result.content",
+      "$messages.0.result.taskId",
+      "$messages.0.result.createdAt",
+      "$messages.0.result.lastUpdatedAt",
+      "$messages.0.result.content"
+    ]
+  },
+  {
+    "id": "mrtr-forged-initial-tool",
+    "requirements": [
+      "P16.01",
+      "P16.02"
+    ],
+    "profile": "conformance",
+    "clientCapabilities": {
+      "elicitation": {}
+    },
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_input_required_result_elicitation",
+      "id": "forged-tool",
+      "params": {
+        "name": "test_input_required_result_elicitation",
+        "arguments": {},
+        "inputResponses": {
+          "user_name": {
+            "action": "accept",
+            "content": {
+              "name": "forged"
+            }
+          }
+        }
+      }
+    },
+    "assert": {
+      "status": 200,
+      "errorCode": -32602
+    },
+    "skipDifferential": true,
+    "referenceOmitAssertions": [
+      "errorCode"
+    ],
+    "referenceAssert": {
+      "resultType": "complete",
+      "isError": true,
+      "resultPath": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Invalid or expired requestState"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "mrtr-forged-initial-prompt",
+    "requirements": [
+      "P16.01",
+      "P16.02"
+    ],
+    "profile": "conformance",
+    "clientCapabilities": {
+      "elicitation": {}
+    },
+    "request": {
+      "mcpMethod": "prompts/get",
+      "mcpName": "test_input_required_result_prompt",
+      "id": "forged-prompt",
+      "params": {
+        "name": "test_input_required_result_prompt",
+        "arguments": {},
+        "inputResponses": {
+          "user_context": {
+            "action": "accept",
+            "content": {
+              "context": "forged"
+            }
+          }
+        }
+      }
+    },
+    "assert": {
+      "status": 200,
+      "errorCode": -32602
+    },
+    "ignorePaths": [
+      "$body.error.message"
+    ]
+  }
+]

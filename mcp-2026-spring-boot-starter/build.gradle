@@ -1,0 +1,8 @@
+plugins { id 'maven-publish' }
+dependencies {
+    api platform(libs.spring.boot.bom)
+    api project(':mcp-2026-core')
+    api project(':mcp-2026-spring-boot')
+    api libs.spring.boot.webmvc
+}
+publishing { publications { mavenJava(MavenPublication) { from components.java } } }

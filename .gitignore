@@ -1,0 +1,22 @@
+# Devenv
+.devenv/
+.devenv.flake.nix
+devenv.local.nix
+devenv.local.yaml
+
+# direnv
+.direnv
+
+# pre-commit
+.pre-commit-config.yaml
+
+.gradle/
+**/build/
+**/node_modules/
+interop/artifacts/
+.env
+.env.*
+!.env.example
+.DS_Store
+.idea/
+*.iml

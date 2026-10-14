@@ -1,0 +1,2211 @@
+{
+  "protocolVersion": "2026-07-28",
+  "profile": "streamable-http-expanded",
+  "baseline": "spec/baseline.json",
+  "scope": {
+    "included": [
+      "stateless Streamable HTTP POST",
+      "server/discover",
+      "tools/list and tools/call",
+      "resources, resource templates, prompts, and completions",
+      "finite SSE progress and request-scoped logging",
+      "filtered subscriptions",
+      "multi round-trip input requests",
+      "io.modelcontextprotocol/tasks extension",
+      "per-request authentication and authorization"
+    ],
+    "deferred": [
+      "stdio",
+      "legacy initialization",
+      "MCP Apps extension"
+    ],
+    "strengths": {
+      "MUST": "Normative requirement in the pinned upstream source.",
+      "SHOULD": "Normative upstream recommendation exercised by this profile.",
+      "PROFILE_MUST": "Release or security gate chosen by this project where upstream is optional, recommended, or silent."
+    }
+  },
+  "requirements": [
+    {
+      "id": "P01.01",
+      "profileId": "P01",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/index.mdx",
+        "section": "Messages / Requests",
+        "lines": "27-49"
+      },
+      "assertion": "Accept only JSON-RPC 2.0 request objects whose id is a string or integer; null is not a valid request id.",
+      "inventoryOnly": [
+        "wire-id-string",
+        "wire-id-number",
+        "wire-id-null",
+        "wire-invalid-envelope"
+      ],
+      "evidence": {
+        "wireCases": [
+          "wire-boolean-id-rejected",
+          "wire-id-null",
+          "wire-id-decimal-integer",
+          "wire-id-exponent-integer",
+          "wire-id-fraction-rejected",
+          "wire-id-string-echo",
+          "wire-id-integer-echo",
+          "wire-id-empty",
+          "wire-id-zero",
+          "wire-id-negative",
+          "wire-id-max-safe",
+          "wire-id-min-safe"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#parsesAndDefensivelyCopiesAValidRequest",
+          "io.github.enryold.mcp.McpEngineTest#acceptsMathematicallyIntegralNumericIdsAndRejectsFractionalIds"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P01.02",
+      "profileId": "P01",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/index.mdx",
+        "section": "Responses",
+        "lines": "51-107"
+      },
+      "assertion": "Every readable request id is echoed with its original JSON type and value in either the result or error response; an unreadable id is omitted from the error response.",
+      "inventoryOnly": [
+        "wire-id-echo-string",
+        "wire-id-echo-number",
+        "wire-unreadable-id-error"
+      ],
+      "evidence": {
+        "wireCases": [
+          "wire-malformed-json",
+          "wire-batch-rejected",
+          "wire-boolean-id-rejected",
+          "wire-missing-method",
+          "wire-empty-body",
+          "wire-whitespace-body",
+          "wire-id-decimal-integer",
+          "wire-id-exponent-integer",
+          "wire-id-fraction-rejected",
+          "wire-id-string-echo",
+          "wire-id-integer-echo",
+          "wire-id-empty",
+          "wire-id-zero",
+          "wire-id-negative",
+          "wire-id-max-safe",
+          "wire-id-min-safe"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#rejectsMalformedBatchAndInvalidEnvelopeWithoutInventingAnId"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P01.03",
+      "profileId": "P01",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/index.mdx",
+        "section": "Error Codes",
+        "lines": "109-151"
+      },
+      "assertion": "Invalid JSON returns Parse error -32700, an invalid JSON-RPC request object returns Invalid Request -32600, and error codes are integers.",
+      "inventoryOnly": [
+        "wire-invalid-json",
+        "wire-invalid-envelope",
+        "wire-invalid-jsonrpc-version"
+      ],
+      "evidence": {
+        "wireCases": [
+          "wire-malformed-json",
+          "wire-batch-rejected",
+          "wire-boolean-id-rejected",
+          "wire-missing-method",
+          "wire-empty-body",
+          "wire-whitespace-body",
+          "wire-id-fraction-rejected",
+          "wire-utf16le-bom-rejected",
+          "wire-utf16be-bom-rejected",
+          "wire-invalid-utf8-rejected"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#rejectsMalformedBatchAndInvalidEnvelopeWithoutInventingAnId",
+          "io.github.enryold.mcp.McpEngineTest#acceptsOnlyStrictUtf8WithoutExecutingRequestsDecodedFromOtherUnicodeEncodings",
+          "io.github.enryold.mcp.McpEngineTest#rejectsTrailingJsonValues"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P01.04",
+      "profileId": "P01",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/transports/streamable-http.mdx",
+        "section": "Sending Messages",
+        "lines": "70-101"
+      },
+      "assertion": "Each POST body contains one JSON-RPC request or notification, never a batch or a JSON-RPC response sent toward the server.",
+      "inventoryOnly": [
+        "wire-single-request",
+        "wire-batch-rejected",
+        "wire-response-direction-rejected"
+      ],
+      "evidence": {
+        "wireCases": [
+          "wire-batch-rejected",
+          "wire-response-direction-rejected"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#rejectsMalformedBatchAndInvalidEnvelopeWithoutInventingAnId"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P01.05",
+      "profileId": "P01",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/index.mdx",
+        "section": "Notifications",
+        "lines": "157-172"
+      },
+      "assertion": "A notification has no id and is never represented as a request with a null id; an accepted notification receives no JSON-RPC response.",
+      "inventoryOnly": [
+        "wire-notification-no-null-id",
+        "wire-notification-no-jsonrpc-response"
+      ],
+      "evidence": {
+        "wireCases": [
+          "wire-notification-rejected-no-execution"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#rejectsClientToServerNotificationsWithoutSynthesizingANullId"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P01.06",
+      "profileId": "P01",
+      "strength": "PROFILE_MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/transports/streamable-http.mdx",
+        "section": "Sending Messages note",
+        "lines": "93-101"
+      },
+      "assertion": "Reject client-to-server notifications on this HTTP profile before request dispatch because the 2026 core defines none; cancellation is expressed by closing the response stream. The exact HTTP error/code is reference-observed because the source permits an HTTP error with an optional id-less JSON-RPC body.",
+      "inventoryOnly": [
+        "wire-notification-unsupported-http"
+      ],
+      "evidence": {
+        "wireCases": [
+          "wire-notification-rejected-no-execution"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#rejectsClientToServerNotificationsWithoutSynthesizingANullId"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P02.01",
+      "profileId": "P02",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/index.mdx",
+        "section": "_meta / Per-request protocol fields",
+        "lines": "365-382"
+      },
+      "assertion": "Every request params._meta contains io.modelcontextprotocol/protocolVersion and io.modelcontextprotocol/clientCapabilities; missing required metadata returns HTTP 400 and -32602.",
+      "inventoryOnly": [
+        "meta-missing",
+        "meta-version-missing",
+        "meta-capabilities-missing"
+      ],
+      "evidence": {
+        "wireCases": [
+          "meta-envelope-missing"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#validatesThePerRequestEnvelopeAndVersion"
+        ],
+        "officialChecks": [
+          "sep-2575-request-meta-invalid-missing-meta",
+          "sep-2575-request-meta-invalid-missing-protocol-version",
+          "sep-2575-request-meta-invalid-missing-client-capabilities",
+          "sep-2575-http-server-meta-invalid-400"
+        ]
+      }
+    },
+    {
+      "id": "P02.02",
+      "profileId": "P02",
+      "strength": "SHOULD",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/index.mdx",
+        "section": "_meta / Per-request protocol fields",
+        "lines": "373-409"
+      },
+      "assertion": "clientInfo is optional, self-reported metadata; requests without it succeed, and it is not used for protocol behavior or security decisions.",
+      "inventoryOnly": [
+        "meta-client-info-present",
+        "meta-client-info-absent",
+        "meta-client-info-untrusted"
+      ],
+      "evidence": {
+        "wireCases": [
+          "meta-client-info-self-reported"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#validatesKnownRequestMetadataTypesWhilePreservingExtensions"
+        ],
+        "officialChecks": [
+          "sep-2575-request-meta-client-info-optional"
+        ]
+      }
+    },
+    {
+      "id": "P02.03",
+      "profileId": "P02",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/index.mdx",
+        "section": "_meta / Per-request protocol fields",
+        "lines": "387-392"
+      },
+      "assertion": "A request that needs an undeclared client capability returns HTTP 400 and -32021 with data.requiredCapabilities as a ClientCapabilities object.",
+      "inventoryOnly": [
+        "meta-required-capability-missing",
+        "meta-required-capability-present"
+      ],
+      "evidence": {
+        "wireCases": [
+          "meta-required-capability-missing",
+          "meta-required-capability-present",
+          "meta-capability-not-sticky"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#enforcesToolClientCapabilityPrerequisitesWithoutExposingMetadataToTheHandler"
+        ],
+        "officialChecks": [
+          "sep-2575-server-rejects-undeclared-capability",
+          "sep-2575-missing-capability-http-400"
+        ]
+      }
+    },
+    {
+      "id": "P02.04",
+      "profileId": "P02",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/versioning.mdx",
+        "section": "Protocol Version Negotiation",
+        "lines": "41-78"
+      },
+      "assertion": "An unknown or unsupported version returns HTTP 400 and -32022 with data.requested and data.supported; supported requests are processed independently without a negotiation handshake.",
+      "inventoryOnly": [
+        "meta-version-supported",
+        "meta-version-unsupported",
+        "meta-version-known-declined"
+      ],
+      "evidence": {
+        "wireCases": [
+          "meta-unsupported-version"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#validatesThePerRequestEnvelopeAndVersion"
+        ],
+        "officialChecks": [
+          "sep-2575-server-unsupported-version-error",
+          "sep-2575-http-server-unsupported-version-400"
+        ]
+      }
+    },
+    {
+      "id": "P03.01",
+      "profileId": "P03",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/server/discover.mdx",
+        "section": "Request and Response",
+        "lines": "7-60"
+      },
+      "assertion": "server/discover is implemented as an RPC method and returns resultType, supportedVersions, and the capabilities actually implemented by this server.",
+      "inventoryOnly": [
+        "discover-direct",
+        "discover-before-any-other-call",
+        "discover-exact-capabilities"
+      ],
+      "evidence": {
+        "wireCases": [
+          "discover-direct",
+          "capability-tools-exact"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#discoversAndListsVisibleToolsInDeterministicOrder"
+        ],
+        "officialChecks": [
+          "sep-2575-server-implements-discover",
+          "sep-2575-discover-capabilities-match-handlers"
+        ]
+      }
+    },
+    {
+      "id": "P03.02",
+      "profileId": "P03",
+      "strength": "SHOULD",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/server/discover.mdx",
+        "section": "DiscoverResult",
+        "lines": "88-108"
+      },
+      "assertion": "Server identity, when supplied, is placed at result._meta['io.modelcontextprotocol/serverInfo'] with name and version; it is not a top-level result field and is not a security input.",
+      "inventoryOnly": [
+        "discover-server-info-meta",
+        "discover-server-info-not-top-level"
+      ],
+      "evidence": {
+        "wireCases": [],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#discoversAndListsVisibleToolsInDeterministicOrder",
+          "io.github.enryold.mcp.McpEngineTest#returnedResponsesCannotMutateTheRegistryOrServerIdentity"
+        ],
+        "officialChecks": [
+          "sep-2575-server-identifies-in-result-meta"
+        ]
+      }
+    },
+    {
+      "id": "P03.03",
+      "profileId": "P03",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/server/utilities/caching.mdx",
+        "section": "Cacheable Results and Cacheable Model",
+        "lines": "11-60"
+      },
+      "assertion": "A complete discovery result includes ttlMs as a non-negative integer and cacheScope as public or private.",
+      "inventoryOnly": [
+        "discover-cache-hints",
+        "discover-cache-ttl-zero"
+      ],
+      "evidence": {
+        "wireCases": [
+          "discover-direct"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#discoversAndListsVisibleToolsInDeterministicOrder"
+        ],
+        "officialChecks": [
+          "sep-2549-ttl-non-negative",
+          "sep-2549-cache-scope-valid"
+        ]
+      }
+    },
+    {
+      "id": "P03.04",
+      "profileId": "P03",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/versioning.mdx",
+        "section": "Protocol Version Negotiation",
+        "lines": "73-78"
+      },
+      "assertion": "Discovery is optional for clients: tools/list and tools/call succeed as the first RPC when their request metadata is valid.",
+      "inventoryOnly": [
+        "discover-not-required-before-list",
+        "discover-not-required-before-call"
+      ],
+      "evidence": {
+        "wireCases": [],
+        "jvmTests": [],
+        "officialChecks": [
+          "tools-list",
+          "tools-call-simple-text"
+        ]
+      }
+    },
+    {
+      "id": "P04.01",
+      "profileId": "P04",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/server/tools.mdx",
+        "section": "Capabilities",
+        "lines": "45-69"
+      },
+      "assertion": "A server advertising tools responds to tools/list with the tools currently available to that authenticated request; the list may be empty but does not vary by connection state.",
+      "inventoryOnly": [
+        "catalog-empty",
+        "catalog-multiple",
+        "catalog-authorized-view",
+        "catalog-connection-independent"
+      ],
+      "evidence": {
+        "wireCases": [
+          "catalog-write",
+          "catalog-read"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#discoversAndListsVisibleToolsInDeterministicOrder"
+        ],
+        "officialChecks": [
+          "tools-list"
+        ]
+      }
+    },
+    {
+      "id": "P04.02",
+      "profileId": "P04",
+      "strength": "SHOULD",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/server/tools.mdx",
+        "section": "Capabilities",
+        "lines": "71-74"
+      },
+      "assertion": "Unchanged tool sets are returned in deterministic order.",
+      "inventoryOnly": [
+        "catalog-deterministic-order"
+      ],
+      "evidence": {
+        "wireCases": [],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#discoversAndListsVisibleToolsInDeterministicOrder"
+        ],
+        "officialChecks": [
+          "tools-list-deterministic-order"
+        ]
+      }
+    },
+    {
+      "id": "P04.03",
+      "profileId": "P04",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/server/tools.mdx",
+        "section": "Tool",
+        "lines": "280-304"
+      },
+      "assertion": "Every catalog entry has a name and a valid, non-null object-root inputSchema; optional outputSchema and annotations are preserved exactly.",
+      "inventoryOnly": [
+        "catalog-exact-input-schema",
+        "catalog-exact-output-schema",
+        "catalog-annotations",
+        "catalog-invalid-schema-rejected-at-registration"
+      ],
+      "evidence": {
+        "wireCases": [],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#validatesSchemaLocationsWhileRejectingActualRemoteReferencesAtStartup",
+          "io.github.enryold.mcp.McpEngineTest#discoversAndListsVisibleToolsInDeterministicOrder"
+        ],
+        "officialChecks": [
+          "wire-schema-valid",
+          "json-schema-2020-12-$schema",
+          "json-schema-2020-12-$defs",
+          "json-schema-2020-12-additionalProperties"
+        ]
+      }
+    },
+    {
+      "id": "P04.04",
+      "profileId": "P04",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/server/utilities/caching.mdx",
+        "section": "Cacheable Results",
+        "lines": "11-25"
+      },
+      "assertion": "Every complete tools/list result includes resultType, tools, ttlMs, and cacheScope.",
+      "inventoryOnly": [
+        "catalog-required-result-fields",
+        "catalog-cache-hints"
+      ],
+      "evidence": {
+        "wireCases": [],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#discoversAndListsVisibleToolsInDeterministicOrder"
+        ],
+        "officialChecks": [
+          "sep-2549-tools-list-caching-hints",
+          "sep-2549-ttl-non-negative",
+          "sep-2549-cache-scope-valid"
+        ]
+      }
+    },
+    {
+      "id": "P04.05",
+      "profileId": "P04",
+      "strength": "SHOULD",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/server/utilities/pagination.mdx",
+        "section": "Pagination Model and Error Handling",
+        "lines": "24-32, 102-111"
+      },
+      "assertion": "If pagination is implemented, cursors are opaque, an absent nextCursor means the end, and invalid cursors return -32602; an unpaginated implementation omits nextCursor.",
+      "applicability": {
+        "status": "applicable",
+        "reason": "This implementation is unpaginated, so omission of nextCursor is the active branch."
+      },
+      "inventoryOnly": [
+        "catalog-unpaginated",
+        "catalog-cursor-opaque",
+        "catalog-cursor-invalid"
+      ],
+      "evidence": {
+        "wireCases": [
+          "catalog-unpaginated"
+        ],
+        "jvmTests": [],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P05.01",
+      "profileId": "P05",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/schema.json",
+        "section": "$defs.CallToolRequestParams"
+      },
+      "assertion": "tools/call requires params._meta and params.name; arguments, when present, is an object and remains absent when omitted rather than being silently rewritten to null.",
+      "inventoryOnly": [
+        "call-name-missing",
+        "call-arguments-absent",
+        "call-arguments-null",
+        "call-arguments-non-object"
+      ],
+      "evidence": {
+        "wireCases": [
+          "call-name-missing-rejected",
+          "call-arguments-omitted-valid",
+          "call-arguments-null-rejected",
+          "call-arguments-array-rejected"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#validatesThePerRequestEnvelopeAndVersion"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P05.02",
+      "profileId": "P05",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/index.mdx",
+        "section": "JSON Schema Usage",
+        "lines": "247-318"
+      },
+      "assertion": "Validate schemas and tool inputs using their declared dialect, defaulting to JSON Schema 2020-12; support composition and bounds, and never dereference network $ref values by default.",
+      "inventoryOnly": [
+        "schema-default-2020-12",
+        "schema-nested-composed",
+        "schema-number-boundaries",
+        "schema-network-ref-denied",
+        "schema-validation-bounded"
+      ],
+      "evidence": {
+        "wireCases": [
+          "schema-missing-input",
+          "schema-extra-input",
+          "schema-nested-composed-valid",
+          "schema-nested-composed-invalid"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#validatesSchemaLocationsWhileRejectingActualRemoteReferencesAtStartup",
+          "io.github.enryold.mcp.McpEngineTest#validatesNestedComposedSchemasWithoutCoercion"
+        ],
+        "officialChecks": [
+          "json-schema-2020-12-$schema",
+          "json-schema-2020-12-$defs",
+          "sep-2106-composition-keywords-preserved",
+          "sep-2106-conditional-keywords-preserved",
+          "sep-2106-anchor-keyword-preserved"
+        ]
+      }
+    },
+    {
+      "id": "P05.03",
+      "profileId": "P05",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/server/tools.mdx",
+        "section": "Calling Tools and Output Schema",
+        "lines": "135-173, 496-515"
+      },
+      "assertion": "Execute a valid tool invocation and return content plus optional structuredContent; structuredContent may be any JSON value and must conform to outputSchema when one is declared.",
+      "inventoryOnly": [
+        "call-echo-unicode",
+        "call-structured-object",
+        "call-structured-array",
+        "call-structured-null",
+        "schema-output-violation"
+      ],
+      "evidence": {
+        "wireCases": [
+          "call-echo-unicode",
+          "call-read-red-seed",
+          "call-read-blue-seed",
+          "call-read-missing",
+          "schema-output-violation",
+          "call-echo-empty",
+          "call-structured-null",
+          "call-structured-array",
+          "call-structured-boolean",
+          "call-structured-number",
+          "call-structured-string",
+          "call-structured-object"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#dispatchesOneAuthorizedToolCallAndPreservesStructuredNull",
+          "io.github.enryold.mcp.McpEngineTest#expectedAndOutputValidationFailuresAreResultsButUnexpectedFailuresAreProtocolErrors"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P05.04",
+      "profileId": "P05",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/schema.json",
+        "section": "$defs.CallToolResult and $defs.ContentBlock"
+      },
+      "assertion": "Return a content array containing schema-valid text, image, audio, resource-link, or embedded-resource blocks without double-encoding JSON.",
+      "inventoryOnly": [
+        "call-content-text",
+        "call-content-image",
+        "call-content-audio",
+        "call-content-resource-link",
+        "call-content-embedded-resource",
+        "call-content-mixed",
+        "call-no-double-encoding"
+      ],
+      "evidence": {
+        "wireCases": [
+          "call-content-text",
+          "call-content-image",
+          "call-content-audio",
+          "call-content-resource-link",
+          "call-content-embedded-resource",
+          "call-content-mixed",
+          "call-content-embedded-binary"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#validatesAllSupportedContentBlocks",
+          "io.github.enryold.mcp.McpEngineTest#followsThePinnedAnyOfSemanticsForEmbeddedResources"
+        ],
+        "officialChecks": [
+          "tools-call-simple-text",
+          "tools-call-image",
+          "tools-call-audio",
+          "tools-call-embedded-resource",
+          "tools-call-mixed-content"
+        ]
+      }
+    },
+    {
+      "id": "P05.05",
+      "profileId": "P05",
+      "strength": "PROFILE_MUST",
+      "source": {
+        "path": "docs/interop.md",
+        "section": "Equality rules"
+      },
+      "assertion": "Mutation scenarios compare backend execution counts and state; the runner never retries a call implicitly and a repeated request id is not an idempotency guarantee.",
+      "inventoryOnly": [
+        "call-executes-once",
+        "state-create-once",
+        "state-repeated-call-executes-separately",
+        "state-no-hidden-retry"
+      ],
+      "evidence": {
+        "wireCases": [
+          "call-create-once",
+          "call-create-duplicate",
+          "state-repeated-call-executes-separately",
+          "deadline-timeout-after-commit"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#dispatchesOneAuthorizedToolCallAndPreservesStructuredNull",
+          "io.github.enryold.mcp.spring.McpHttpHandlerTest#deadlineAndSaturationNeverRetryOrFreeCapacityForStillRunningMutation",
+          "io.github.enryold.mcp.sample.EmbeddedToolsHttpTest#directSpringServicesHaveEquivalentResultsAndOneMutation"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P06.01",
+      "profileId": "P06",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/index.mdx",
+        "section": "Result Responses and ResultType",
+        "lines": "55-85"
+      },
+      "assertion": "Every result includes resultType; complete is used for final tool/list/discovery results and unknown result types are never emitted without an advertised extension.",
+      "inventoryOnly": [
+        "error-result-type-complete",
+        "error-result-type-unknown-not-emitted"
+      ],
+      "evidence": {
+        "wireCases": [
+          "discover-direct",
+          "error-expected"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#discoversAndListsVisibleToolsInDeterministicOrder",
+          "io.github.enryold.mcp.McpEngineTest#dispatchesOneAuthorizedToolCallAndPreservesStructuredNull"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P06.02",
+      "profileId": "P06",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/server/tools.mdx",
+        "section": "Error Handling",
+        "lines": "738-785"
+      },
+      "assertion": "Unknown tools and malformed tool requests are JSON-RPC protocol errors; tool/API/business failures are CallToolResult values with resultType complete, content, and isError true.",
+      "inventoryOnly": [
+        "error-unknown-tool",
+        "error-malformed-tool-call",
+        "error-domain-is-error",
+        "error-business-is-error"
+      ],
+      "evidence": {
+        "wireCases": [
+          "call-read-missing",
+          "call-create-duplicate",
+          "error-expected",
+          "unknown-tool"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#returnsAProtocolErrorForUnknownToolAndAToolErrorForSchemaInvalidArguments",
+          "io.github.enryold.mcp.McpEngineTest#expectedAndOutputValidationFailuresAreResultsButUnexpectedFailuresAreProtocolErrors"
+        ],
+        "officialChecks": [
+          "tools-call-error"
+        ]
+      }
+    },
+    {
+      "id": "P06.03",
+      "profileId": "P06",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/server/tools.mdx",
+        "section": "Error Handling",
+        "lines": "738-785"
+      },
+      "assertion": "An unknown tool name or params that fail the CallToolRequest protocol schema return -32602; once a request structurally identifies a registered tool, failure against that tool's declared input schema is an actionable result with isError true.",
+      "inventoryOnly": [
+        "error-unknown-tool-invalid-params",
+        "error-call-request-schema-invalid-params",
+        "error-tool-input-schema-is-error"
+      ],
+      "evidence": {
+        "wireCases": [
+          "schema-missing-input",
+          "schema-extra-input",
+          "unknown-tool",
+          "call-arguments-null-rejected",
+          "call-arguments-array-rejected"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#returnsAProtocolErrorForUnknownToolAndAToolErrorForSchemaInvalidArguments"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P06.04",
+      "profileId": "P06",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/schema.json",
+        "section": "$defs.CallToolResult"
+      },
+      "assertion": "CallToolResult always contains content; isError may be absent and then means false, while missing fields and explicit null remain distinguishable wherever the schema permits both.",
+      "inventoryOnly": [
+        "error-is-error-absent",
+        "error-content-required",
+        "error-absence-vs-null"
+      ],
+      "evidence": {
+        "wireCases": [
+          "call-structured-null",
+          "call-structured-array",
+          "call-structured-boolean",
+          "call-structured-number",
+          "call-structured-string",
+          "call-structured-object"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#dispatchesOneAuthorizedToolCallAndPreservesStructuredNull",
+          "io.github.enryold.mcp.McpEngineTest#distinguishesAbsentStructuredContentFromExplicitNull",
+          "io.github.enryold.mcp.McpEngineTest#validatesAllSupportedContentBlocks"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P06.05",
+      "profileId": "P06",
+      "strength": "PROFILE_MUST",
+      "source": {
+        "path": "docs/specification.md",
+        "section": "Protocol contract and requirement IDs / P06 and P09"
+      },
+      "assertion": "Expected domain and downstream API failures return complete tool-error results. Output-schema violations also return a safe tool-error result and discard invalid handler content and structuredContent. An unhandled handler exception returns sanitized -32603 with only a correlation id. No path exposes raw arguments, private output, stack traces, or secrets.",
+      "inventoryOnly": [
+        "error-unexpected-sanitized",
+        "schema-output-violation-sanitized"
+      ],
+      "evidence": {
+        "wireCases": [
+          "error-unexpected-sanitized",
+          "schema-output-violation"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#expectedAndOutputValidationFailuresAreResultsButUnexpectedFailuresAreProtocolErrors",
+          "io.github.enryold.mcp.sample.FixtureHttpTest#enforcesFixtureIdentityPermissionsAndFailureShapes"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P07.01",
+      "profileId": "P07",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/transports/streamable-http.mdx",
+        "section": "Sending Messages",
+        "lines": "47-91"
+      },
+      "assertion": "Expose one MCP endpoint that accepts POST; a conforming request advertises both application/json and text/event-stream in Accept, and this profile returns one application/json response object.",
+      "inventoryOnly": [
+        "http-post",
+        "http-wrong-verb",
+        "http-accept-both-success",
+        "http-json-response-content-type"
+      ],
+      "evidence": {
+        "wireCases": [
+          "http-get-rejected",
+          "http-json-response-content-type"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.spring.McpHttpHandlerTest#transportGatesAndPrivateCatalog"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P07.02",
+      "profileId": "P07",
+      "strength": "PROFILE_MUST",
+      "source": {
+        "path": "docs/interop.md",
+        "section": "Initial scenario inventory / HTTP wire"
+      },
+      "assertion": "Reject a request whose media type is not application/json. The upstream transport describes a JSON POST body but does not assign a canonical status/code for this case, so the differential fixture records the pinned reference observation.",
+      "inventoryOnly": [
+        "http-content-type-missing",
+        "http-content-type-wrong",
+        "http-content-type-json-charset"
+      ],
+      "evidence": {
+        "wireCases": [
+          "http-wrong-content-type"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.spring.McpHttpHandlerTest#transportGatesAndPrivateCatalog"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P07.03",
+      "profileId": "P07",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/transports/streamable-http.mdx",
+        "section": "Protocol Version Header",
+        "lines": "244-284"
+      },
+      "assertion": "Every profile request includes MCP-Protocol-Version equal to body metadata; missing/malformed/mismatched headers return HTTP 400 and -32020, while an equal but unsupported version returns HTTP 400 and -32022.",
+      "inventoryOnly": [
+        "http-version-header-missing",
+        "http-version-header-mismatch",
+        "http-version-unsupported"
+      ],
+      "evidence": {
+        "wireCases": [
+          "meta-unsupported-version",
+          "meta-header-body-conflict"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.spring.McpHttpHandlerTest#validatesMirroredHeadersAndBase64Unicode"
+        ],
+        "officialChecks": [
+          "sep-2575-http-server-header-mismatch-400",
+          "sep-2575-http-server-unsupported-version-400"
+        ]
+      }
+    },
+    {
+      "id": "P07.04",
+      "profileId": "P07",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/transports/streamable-http.mdx",
+        "section": "Standard Request Headers and Server Validation",
+        "lines": "286-356, 570-606"
+      },
+      "assertion": "Mcp-Method is present on every request and equals body method; Mcp-Name is present on tools/call and equals params.name after decoding. Header names compare case-insensitively and values case-sensitively. Validation failures return HTTP 400 and -32020.",
+      "inventoryOnly": [
+        "http-method-header-missing",
+        "http-method-header-mismatch",
+        "http-name-header-missing",
+        "http-name-header-mismatch",
+        "http-header-name-case",
+        "http-header-value-case"
+      ],
+      "evidence": {
+        "wireCases": [
+          "meta-method-header-conflict",
+          "meta-name-header-conflict",
+          "http-name-header-missing",
+          "http-name-header-malformed",
+          "http-name-header-required-before-malformed-body",
+          "call-name-missing-rejected"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.spring.McpHttpHandlerTest#validatesMirroredHeadersAndBase64Unicode"
+        ],
+        "officialChecks": [
+          "sep-2243-server-reject-invalid-headers",
+          "sep-2243-server-reject-error-code",
+          "sep-2243-header-name-case-insensitive"
+        ]
+      }
+    },
+    {
+      "id": "P07.05",
+      "profileId": "P07",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/transports/streamable-http.mdx",
+        "section": "Value Encoding",
+        "lines": "467-519"
+      },
+      "assertion": "Non-ASCII, unsafe, padded, control-containing, and sentinel-looking Mcp-Name or Mcp-Param values use the exact =?base64?<UTF-8 base64>?= encoding and are decoded before comparison.",
+      "inventoryOnly": [
+        "http-name-unicode-base64",
+        "http-param-padded-base64",
+        "http-param-control-base64",
+        "http-param-sentinel-base64",
+        "http-base64-malformed"
+      ],
+      "evidence": {
+        "wireCases": [
+          "http-custom-header-unicode",
+          "http-custom-header-padded",
+          "http-custom-header-control",
+          "http-custom-header-sentinel",
+          "http-custom-header-malformed-base64",
+          "http-name-header-malformed"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.spring.McpHttpHandlerTest#validatesMirroredHeadersAndBase64Unicode"
+        ],
+        "officialChecks": [
+          "sep-2243-server-decode-base64"
+        ]
+      }
+    },
+    {
+      "id": "P07.06",
+      "profileId": "P07",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/server/tools.mdx",
+        "section": "x-mcp-header",
+        "lines": "334-404"
+      },
+      "assertion": "x-mcp-header names are non-empty RFC 9110 tokens, unique case-insensitively, apply only to statically reachable string/integer/boolean properties, and never expose sensitive fields; invalid registered schemas fail before serving.",
+      "inventoryOnly": [
+        "http-custom-header-schema-valid",
+        "http-custom-header-schema-invalid-name",
+        "http-custom-header-schema-duplicate",
+        "http-custom-header-schema-wrong-type",
+        "http-custom-header-schema-unreachable"
+      ],
+      "evidence": {
+        "wireCases": [],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#validatesSchemaLocationsWhileRejectingActualRemoteReferencesAtStartup"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P07.07",
+      "profileId": "P07",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/transports/streamable-http.mdx",
+        "section": "Server Behavior for Custom Headers",
+        "lines": "546-568"
+      },
+      "assertion": "Each non-null annotated argument requires its matching Mcp-Param header and must equal the decoded body value; absent/null arguments omit it. Invalid characters, missing headers, or mismatches return HTTP 400 and -32020.",
+      "inventoryOnly": [
+        "http-custom-header-match",
+        "http-custom-header-null-omitted",
+        "http-custom-header-absent-omitted",
+        "http-custom-header-missing",
+        "http-custom-header-mismatch",
+        "http-custom-header-invalid-chars"
+      ],
+      "evidence": {
+        "wireCases": [
+          "http-custom-header-unicode",
+          "http-custom-header-padded",
+          "http-custom-header-control",
+          "http-custom-header-sentinel",
+          "http-custom-header-malformed-base64",
+          "http-custom-header-missing",
+          "http-custom-header-empty"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.spring.McpHttpHandlerTest#validatesMirroredHeadersAndBase64Unicode"
+        ],
+        "officialChecks": [
+          "sep-2243-server-reject-invalid-param-chars",
+          "sep-2243-server-reject-param-mismatch",
+          "sep-2243-server-validate-param-match"
+        ]
+      }
+    },
+    {
+      "id": "P07.08",
+      "profileId": "P07",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/transports/streamable-http.mdx",
+        "section": "Protocol Version Header",
+        "lines": "271-275"
+      },
+      "assertion": "An RPC method the server does not implement returns HTTP 404 with -32601 and the readable request id; this includes optional methods whose capabilities were not advertised.",
+      "inventoryOnly": [
+        "http-unknown-method",
+        "capability-unadvertised-method",
+        "capability-legacy-method"
+      ],
+      "evidence": {
+        "wireCases": [
+          "method-initialize-unadvertised",
+          "method-ping-unadvertised",
+          "method-resources-unadvertised",
+          "method-resources-templates-list-unadvertised",
+          "method-resources-read-unadvertised",
+          "method-prompts-list-unadvertised",
+          "method-prompts-get-unadvertised",
+          "method-completion-complete-unadvertised",
+          "method-logging-setLevel-unadvertised",
+          "method-resources-subscribe-unadvertised",
+          "method-resources-unsubscribe-unadvertised"
+        ],
+        "jvmTests": [],
+        "officialChecks": [
+          "sep-2575-http-server-method-not-found-404",
+          "sep-2575-http-server-error-jsonrpc-id"
+        ]
+      }
+    },
+    {
+      "id": "P07.09",
+      "profileId": "P07",
+      "strength": "PROFILE_MUST",
+      "source": {
+        "path": "docs/interop.md",
+        "section": "Initial scenario inventory / HTTP wire"
+      },
+      "assertion": "Reject a request whose Accept header does not advertise both application/json and text/event-stream. Upstream states the client requirement but does not assign a canonical server status/code, so the differential fixture records the pinned reference observation.",
+      "inventoryOnly": [
+        "http-accept-missing",
+        "http-accept-json-only",
+        "http-accept-sse-only",
+        "http-accept-wildcard"
+      ],
+      "evidence": {
+        "wireCases": [
+          "http-accept-incomplete",
+          "http-accept-wrong"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.spring.McpHttpHandlerTest#transportGatesAndPrivateCatalog"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P08.01",
+      "profileId": "P08",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/index.mdx",
+        "section": "Statelessness",
+        "lines": "182-214"
+      },
+      "assertion": "Process each request only from its own metadata, credentials, and explicit identifiers; never infer version, capabilities, identity, tenant, task, or conversation from a connection or prior request.",
+      "inventoryOnly": [
+        "stateless-no-initialize",
+        "stateless-capability-change",
+        "stateless-credential-change",
+        "stateless-parallel-identities",
+        "stateless-explicit-handle"
+      ],
+      "evidence": {
+        "wireCases": [
+          "identity-parallel-tenants",
+          "meta-capability-not-sticky"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#enforcesToolClientCapabilityPrerequisitesWithoutExposingMetadataToTheHandler",
+          "io.github.enryold.mcp.McpEngineTest#enforcesAuthorizationAndDeadlineOnEveryDispatch",
+          "io.github.enryold.mcp.spring.OAuthResourceServerTest#validatesJwtIdentityAudienceIssuerExpiryScopesAndKeepsHostCsrf"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P08.02",
+      "profileId": "P08",
+      "strength": "PROFILE_MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/versioning.mdx",
+        "section": "Versioning and Compatibility",
+        "lines": "7-14, 126-182"
+      },
+      "assertion": "The 2026 profile has no initialize handshake or MCP transport session and does not expose legacy session GET/DELETE behavior.",
+      "inventoryOnly": [
+        "stateless-initialize-method-not-found",
+        "stateless-no-session-header",
+        "stateless-no-session-get",
+        "stateless-no-session-delete"
+      ],
+      "evidence": {
+        "wireCases": [
+          "http-get-rejected"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.spring.OAuthResourceServerTest#validatesJwtIdentityAudienceIssuerExpiryScopesAndKeepsHostCsrf"
+        ],
+        "officialChecks": [
+          "sep-2575-http-server-method-not-found-404-initialize",
+          "sep-2575-http-server-method-not-found-404-ping"
+        ]
+      }
+    },
+    {
+      "id": "P09.01",
+      "profileId": "P09",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/transports/streamable-http.mdx",
+        "section": "Security & Endpoint",
+        "lines": "54-68"
+      },
+      "assertion": "Validate Origin when present and return HTTP 403 for a disallowed origin; local samples bind to loopback.",
+      "inventoryOnly": [
+        "security-origin-allowed",
+        "security-origin-denied",
+        "security-origin-absent-policy",
+        "security-loopback-binding"
+      ],
+      "evidence": {
+        "wireCases": [
+          "security-origin-rejected"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.spring.McpHttpHandlerTest#transportGatesAndPrivateCatalog",
+          "io.github.enryold.mcp.spring.McpPropertiesTest#bindsDurationAndExactOrigins"
+        ],
+        "officialChecks": [
+          "localhost-host-rebinding-rejected",
+          "localhost-host-valid-accepted"
+        ]
+      }
+    },
+    {
+      "id": "P09.02",
+      "profileId": "P09",
+      "strength": "SHOULD",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/index.mdx",
+        "section": "JSON Schema Usage / Composition-Keyword Resource Use",
+        "lines": "299-318"
+      },
+      "assertion": "Bound schema depth, subschema count, remote-reference behavior, and validation time so malicious schemas cannot exhaust the validator.",
+      "inventoryOnly": [
+        "limits-json-depth",
+        "limits-schema-depth",
+        "limits-schema-count",
+        "limits-schema-time",
+        "limits-remote-ref"
+      ],
+      "evidence": {
+        "wireCases": [
+          "schema-nested-composed-valid",
+          "schema-nested-composed-invalid",
+          "schema-bounded-pattern-valid",
+          "schema-bounded-pattern-invalid"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#validatesSchemaLocationsWhileRejectingActualRemoteReferencesAtStartup",
+          "io.github.enryold.mcp.McpEngineTest#validatesNestedComposedSchemasWithoutCoercion",
+          "io.github.enryold.mcp.McpEngineTest#validatesSchemaPatternsWithBoundedRe2Matching",
+          "io.github.enryold.mcp.McpEngineTest#rejectsUnsupportedOrOversizedSchemaPatternsAtStartup"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P09.03",
+      "profileId": "P09",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/server/tools.mdx",
+        "section": "Security Considerations",
+        "lines": "787-803"
+      },
+      "assertion": "Validate tool inputs, enforce access controls, rate-limit calls, and sanitize outputs.",
+      "inventoryOnly": [
+        "security-input-validation",
+        "security-output-sanitization",
+        "limits-rate-limit"
+      ],
+      "evidence": {
+        "wireCases": [
+          "schema-output-violation",
+          "limits-host-rate-limit"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#expectedAndOutputValidationFailuresAreResultsButUnexpectedFailuresAreProtocolErrors",
+          "io.github.enryold.mcp.McpEngineTest#enforcesAuthorizationAndDeadlineOnEveryDispatch",
+          "io.github.enryold.mcp.McpEngineTest#mapsAuthorizationRateLimitsToAProtocolErrorWithRetryMetadata",
+          "io.github.enryold.mcp.spring.McpHttpHandlerTest#hostRateLimitPreservesRetryAfterAndDoesNotExecute"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P09.04",
+      "profileId": "P09",
+      "strength": "PROFILE_MUST",
+      "source": {
+        "path": "docs/specification.md",
+        "section": "Protocol contract and requirement IDs / P09"
+      },
+      "assertion": "Reject oversized or excessively deep bodies before execution, use bounded processing, emit Retry-After for rate limiting, and never log tokens, raw private arguments, or private output.",
+      "inventoryOnly": [
+        "limits-body-size",
+        "limits-body-depth",
+        "limits-rate-limit-retry-after",
+        "security-no-secret-log"
+      ],
+      "evidence": {
+        "wireCases": [
+          "limits-body-size",
+          "limits-json-depth",
+          "limits-host-rate-limit"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#usesAConfigurableRequestByteLimit",
+          "io.github.enryold.mcp.McpEngineTest#appliesConfiguredJsonDepthLimit",
+          "io.github.enryold.mcp.spring.McpHttpHandlerTest#bodyLimitPreventsDispatch",
+          "io.github.enryold.mcp.spring.McpHttpHandlerTest#deadlineAndSaturationNeverRetryOrFreeCapacityForStillRunningMutation",
+          "io.github.enryold.mcp.spring.McpHttpHandlerTest#hostRateLimitPreservesRetryAfterAndDoesNotExecute",
+          "io.github.enryold.mcp.spring.McpHttpHandlerTest#unexpectedFailuresDoNotLogOrReturnPrivateInputs"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P10.01",
+      "profileId": "P10",
+      "strength": "PROFILE_MUST",
+      "source": {
+        "path": "docs/specification.md",
+        "section": "Authentication and product integration"
+      },
+      "assertion": "Authenticate and authorize discovery, listing, and execution independently on every request; missing, invalid, expired, revoked, wrong-audience, or insufficient credentials are rejected with the host's canonical 401/403 behavior.",
+      "inventoryOnly": [
+        "identity-missing",
+        "identity-invalid",
+        "identity-expired",
+        "identity-revoked",
+        "identity-wrong-audience",
+        "identity-insufficient-scope",
+        "identity-authorize-each-operation"
+      ],
+      "evidence": {
+        "wireCases": [
+          "catalog-write",
+          "catalog-read",
+          "identity-missing",
+          "identity-revoked",
+          "identity-stale-catalog-denied"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#enforcesAuthorizationAndDeadlineOnEveryDispatch",
+          "io.github.enryold.mcp.McpEngineTest#explicitRequestAuthorizationCannotBeWeakenedByTheEnginePolicy",
+          "io.github.enryold.mcp.spring.OAuthResourceServerTest#validatesJwtIdentityAudienceIssuerExpiryScopesAndKeepsHostCsrf"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P10.02",
+      "profileId": "P10",
+      "strength": "PROFILE_MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/authorization/index.mdx",
+        "section": "Access Token Usage and Error Handling",
+        "lines": "254-297, 315-350"
+      },
+      "assertion": "Bearer tokens are accepted only from the Authorization header, validated for this resource/audience, never accepted from the query string, and invalid tokens receive HTTP 401 while insufficient permissions receive HTTP 403 with the appropriate challenge.",
+      "inventoryOnly": [
+        "identity-bearer-header",
+        "identity-token-query-rejected",
+        "identity-audience",
+        "identity-401-challenge",
+        "identity-403-challenge"
+      ],
+      "evidence": {
+        "wireCases": [
+          "identity-missing",
+          "identity-api-token-rejected-at-mcp",
+          "identity-query-token-rejected"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.spring.OAuthResourceServerTest#validatesJwtIdentityAudienceIssuerExpiryScopesAndKeepsHostCsrf"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P10.03",
+      "profileId": "P10",
+      "strength": "PROFILE_MUST",
+      "source": {
+        "path": "docs/interop.md",
+        "section": "Initial scenario inventory / isolation"
+      },
+      "assertion": "Parallel principals and tenants receive only their authorized catalogs and results; a changed or revoked credential takes effect on the next request and a stale catalog never authorizes a call.",
+      "inventoryOnly": [
+        "identity-parallel-principals",
+        "identity-parallel-tenants",
+        "identity-changed-credential",
+        "identity-revoked-after-list",
+        "identity-stale-catalog-denied"
+      ],
+      "evidence": {
+        "wireCases": [
+          "catalog-write",
+          "catalog-read",
+          "call-read-red-seed",
+          "call-read-blue-seed",
+          "call-read-missing",
+          "identity-stale-catalog-denied",
+          "identity-parallel-tenants",
+          "identity-private-catalog-token-change",
+          "meta-client-info-self-reported",
+          "resources-list",
+          "resource-read-text",
+          "prompts-list",
+          "completion-prompt",
+          "resource-templates-list",
+          "mrtr-cross-principal-state",
+          "tasks-cross-principal-get"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.spring.OAuthResourceServerTest#validatesJwtIdentityAudienceIssuerExpiryScopesAndKeepsHostCsrf",
+          "io.github.enryold.mcp.sample.EmbeddedToolsHttpTest#directSpringServicesHaveEquivalentResultsAndOneMutation"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P10.04",
+      "profileId": "P10",
+      "strength": "PROFILE_MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/server/utilities/caching.mdx",
+        "section": "Cache Scope Field and Security Considerations",
+        "lines": "93-108, 171-179"
+      },
+      "assertion": "Protected or authorization-filtered discovery/catalog results use cacheScope private and are never reused across authorization contexts; cache hints never replace authorization.",
+      "inventoryOnly": [
+        "cache-protected-private",
+        "cache-no-cross-principal",
+        "cache-no-cross-tenant",
+        "cache-does-not-authorize"
+      ],
+      "evidence": {
+        "wireCases": [
+          "discover-direct",
+          "identity-private-catalog-token-change"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#discoversAndListsVisibleToolsInDeterministicOrder",
+          "io.github.enryold.mcp.spring.OAuthResourceServerTest#validatesJwtIdentityAudienceIssuerExpiryScopesAndKeepsHostCsrf"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P10.05",
+      "profileId": "P10",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/authorization/security-considerations.mdx",
+        "section": "Access Token Privilege Restriction",
+        "lines": "116-128"
+      },
+      "assertion": "Validate the inbound token before processing or returning data, require the server as its audience, and never pass the caller's token through to an upstream API.",
+      "inventoryOnly": [
+        "identity-validate-before-dispatch",
+        "identity-audience-bound",
+        "identity-no-token-passthrough"
+      ],
+      "evidence": {
+        "wireCases": [
+          "identity-api-token-rejected-at-mcp"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.spring.OAuthResourceServerTest#validatesJwtIdentityAudienceIssuerExpiryScopesAndKeepsHostCsrf",
+          "io.github.enryold.mcp.sample.EmbeddedToolsHttpTest#separatesMcpAndFixtureApiCredentialsWithoutRetainingTheInboundBearer"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P11.01",
+      "profileId": "P11",
+      "strength": "PROFILE_MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/server/tools.mdx",
+        "section": "Capabilities",
+        "lines": "45-69"
+      },
+      "assertion": "Advertise tools as tools:{} and omit listChanged unless the corresponding notification behavior is implemented.",
+      "inventoryOnly": [
+        "capability-tools-advertised",
+        "capability-tools-list-changed-not-advertised"
+      ],
+      "evidence": {
+        "wireCases": [
+          "capability-tools-exact"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#discoversAndListsVisibleToolsInDeterministicOrder"
+        ],
+        "officialChecks": [
+          "sep-2575-discover-capabilities-match-handlers"
+        ]
+      }
+    },
+    {
+      "id": "P11.02",
+      "profileId": "P11",
+      "strength": "PROFILE_MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/versioning.mdx",
+        "section": "Extension Negotiation",
+        "lines": "80-124"
+      },
+      "assertion": "Do not advertise optional capabilities or extensions that are not implemented; unsupported extension behavior falls back to core behavior or fails explicitly.",
+      "inventoryOnly": [
+        "capability-no-resources",
+        "capability-no-prompts",
+        "capability-no-completions",
+        "capability-no-subscriptions",
+        "capability-no-tasks",
+        "capability-no-apps"
+      ],
+      "evidence": {
+        "wireCases": [
+          "capability-tools-exact"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#discoversAndListsVisibleToolsInDeterministicOrder"
+        ],
+        "officialChecks": [
+          "sep-2575-discover-capabilities-match-handlers"
+        ]
+      }
+    },
+    {
+      "id": "P11.03",
+      "profileId": "P11",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/schema.json",
+        "section": "$defs.MethodNotFoundError"
+      },
+      "assertion": "Calls to genuinely unknown, legacy, or unadvertised optional methods fail deterministically with Method not found -32601 rather than accidental handler exposure.",
+      "inventoryOnly": [
+        "capability-unknown-method",
+        "capability-initialize",
+        "capability-ping",
+        "capability-logging-set-level",
+        "capability-resource-method",
+        "capability-prompt-method"
+      ],
+      "evidence": {
+        "wireCases": [
+          "method-initialize-unadvertised",
+          "method-ping-unadvertised",
+          "method-resources-unadvertised",
+          "method-resources-templates-list-unadvertised",
+          "method-resources-read-unadvertised",
+          "method-prompts-list-unadvertised",
+          "method-prompts-get-unadvertised",
+          "method-completion-complete-unadvertised",
+          "method-logging-setLevel-unadvertised",
+          "method-resources-subscribe-unadvertised",
+          "method-resources-unsubscribe-unadvertised"
+        ],
+        "jvmTests": [],
+        "officialChecks": [
+          "sep-2575-http-server-method-not-found-404-initialize",
+          "sep-2575-http-server-method-not-found-404-ping",
+          "sep-2575-http-server-method-not-found-404-logging-setlevel",
+          "sep-2575-http-server-method-not-found-404-resources-subscribe",
+          "sep-2575-http-server-method-not-found-404-resources-unsubscribe",
+          "sep-2575-http-server-method-not-found-404"
+        ]
+      }
+    },
+    {
+      "id": "P12.01",
+      "profileId": "P12",
+      "strength": "SHOULD",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/patterns/cancellation.mdx",
+        "section": "Timeouts",
+        "lines": "45-64"
+      },
+      "assertion": "Apply configurable per-request timeouts and an absolute maximum timeout even when progress is observed.",
+      "inventoryOnly": [
+        "deadline-configured",
+        "deadline-absolute-maximum"
+      ],
+      "evidence": {
+        "wireCases": [
+          "deadline-slow",
+          "deadline-timeout-after-commit"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEngineTest#enforcesAuthorizationAndDeadlineOnEveryDispatch",
+          "io.github.enryold.mcp.spring.McpHttpHandlerTest#deadlineAndSaturationNeverRetryOrFreeCapacityForStillRunningMutation",
+          "io.github.enryold.mcp.spring.McpPropertiesTest#defaultsAreDisabledAndBounded",
+          "io.github.enryold.mcp.spring.McpPropertiesTest#rejectsUnboundedAndAmbiguousSettings"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P12.02",
+      "profileId": "P12",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/transports/streamable-http.mdx",
+        "section": "Cancellation",
+        "lines": "233-241"
+      },
+      "assertion": "Closing an SSE stream cancels that request, stops work as soon as practical, sends no later messages, and releases bounded subscription capacity.",
+      "inventoryOnly": [
+        "deadline-sse-disconnect",
+        "deadline-no-message-after-cancel"
+      ],
+      "evidence": {
+        "wireCases": [
+          "subscription-empty-listen-cancel"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.spring.McpHttpHandlerTest#sseDisconnectCancelsEmptySubscriptionAndReleasesItsBoundedSlot"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P12.03",
+      "profileId": "P12",
+      "strength": "PROFILE_MUST",
+      "source": {
+        "path": "docs/interop.md",
+        "section": "Equality rules and Initial scenario inventory / state"
+      },
+      "assertion": "A timeout does not promise rollback, and neither server nor runner retries a mutation automatically; timeout-after-commit and an explicit repeated call are observed as separate cases with execution counts.",
+      "inventoryOnly": [
+        "deadline-timeout-before-commit",
+        "deadline-timeout-after-commit",
+        "deadline-no-hidden-retry",
+        "deadline-explicit-repeat"
+      ],
+      "evidence": {
+        "wireCases": [
+          "call-create-once",
+          "call-create-duplicate",
+          "state-repeated-call-executes-separately",
+          "deadline-timeout-after-commit"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.spring.McpHttpHandlerTest#deadlineAndSaturationNeverRetryOrFreeCapacityForStillRunningMutation",
+          "io.github.enryold.mcp.sample.FixtureHttpTest#slowMutationCommitsExactlyOnceBeforeItsDelayedResponse"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P13.01",
+      "profileId": "P13",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/server/resources.mdx",
+        "section": "Capabilities and Listing Resources",
+        "lines": "39-81, 85-131"
+      },
+      "assertion": "Advertise resources and return the authorization-filtered resource catalog with the pinned descriptor, caching, and pagination shape.",
+      "inventoryOnly": [
+        "resources-capability",
+        "resources-list-private-catalog"
+      ],
+      "evidence": {
+        "wireCases": [
+          "resources-list"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpCatalogModuleTest#listsOnlyVisibleRegistrationsInDeterministicPrivateCatalogs"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P13.02",
+      "profileId": "P13",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/server/resources.mdx",
+        "section": "Resource Templates",
+        "lines": "181-229"
+      },
+      "assertion": "List resource templates with valid RFC 6570 templates and pinned descriptor, caching, and pagination fields.",
+      "inventoryOnly": [
+        "resource-templates-list"
+      ],
+      "evidence": {
+        "wireCases": [
+          "resource-templates-list"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpCatalogModuleTest#listsOnlyVisibleRegistrationsInDeterministicPrivateCatalogs"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P13.03",
+      "profileId": "P13",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/server/resources.mdx",
+        "section": "Reading Resources",
+        "lines": "134-177"
+      },
+      "assertion": "Authorize and resolve static or templated resources per invocation and return schema-valid text or binary contents.",
+      "inventoryOnly": [
+        "resource-read-static",
+        "resource-read-template"
+      ],
+      "evidence": {
+        "wireCases": [
+          "resource-read-text",
+          "resource-read-template"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpCatalogModuleTest#resolvesResourcesPerTenantAndReturnsTheNormativeMissingResourceError"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P13.04",
+      "profileId": "P13",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/server/resources.mdx",
+        "section": "Error Handling",
+        "lines": "402-425"
+      },
+      "assertion": "Return Invalid Params -32602 with the requested URI for a missing resource, never an ambiguous empty contents array.",
+      "inventoryOnly": [
+        "resource-read-not-found"
+      ],
+      "evidence": {
+        "wireCases": [
+          "resource-read-missing"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpCatalogModuleTest#resolvesResourcesPerTenantAndReturnsTheNormativeMissingResourceError"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P14.01",
+      "profileId": "P14",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/server/prompts.mdx",
+        "section": "Capabilities and Listing Prompts",
+        "lines": "39-64, 68-119"
+      },
+      "assertion": "Advertise prompts and return the authorization-filtered prompt catalog with required argument metadata and private caching.",
+      "inventoryOnly": [
+        "prompts-capability",
+        "prompts-list-private-catalog"
+      ],
+      "evidence": {
+        "wireCases": [
+          "prompts-list"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpCatalogModuleTest#listsOnlyVisibleRegistrationsInDeterministicPrivateCatalogs"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P14.02",
+      "profileId": "P14",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/server/prompts.mdx",
+        "section": "Getting a Prompt",
+        "lines": "122-165"
+      },
+      "assertion": "Resolve prompt arguments per invocation and return schema-valid prompt messages and content.",
+      "inventoryOnly": [
+        "prompt-get-with-arguments"
+      ],
+      "evidence": {
+        "wireCases": [
+          "prompt-get-arguments"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpCatalogModuleTest#validatesRequiredPromptStringsAndCompletionResults"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P14.03",
+      "profileId": "P14",
+      "strength": "SHOULD",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/server/prompts.mdx",
+        "section": "Error Handling",
+        "lines": "319-330"
+      },
+      "assertion": "Validate required prompt arguments before execution and return Invalid Params -32602 when they are missing.",
+      "inventoryOnly": [
+        "prompt-missing-required-argument"
+      ],
+      "evidence": {
+        "wireCases": [
+          "prompt-get-missing-required-argument"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpCatalogModuleTest#validatesRequiredPromptStringsAndCompletionResults"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P15.01",
+      "profileId": "P15",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/server/utilities/completion.mdx",
+        "section": "Capabilities and Requesting Completions",
+        "lines": "33-49, 72-87, 142-148"
+      },
+      "assertion": "Advertise completions and return at most 100 schema-valid string suggestions with consistent total and hasMore metadata.",
+      "inventoryOnly": [
+        "completion-prompt-argument"
+      ],
+      "evidence": {
+        "wireCases": [
+          "completion-prompt"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpCatalogModuleTest#validatesRequiredPromptStringsAndCompletionResults"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P16.01",
+      "profileId": "P16",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/patterns/mrtr.mdx",
+        "section": "Supported Requests and Server Requirements",
+        "lines": "188-192, 224-247"
+      },
+      "assertion": "Return InputRequiredResult only from supported methods, require inputRequests or opaque requestState, validate declared capabilities, and bind protected continuation state to caller, request, arguments, and expiry.",
+      "inventoryOnly": [
+        "mrtr-supported-methods",
+        "mrtr-protected-state",
+        "mrtr-capability-gating"
+      ],
+      "evidence": {
+        "wireCases": [
+          "mrtr-elicitation-round-trip",
+          "mrtr-multiple-inputs",
+          "mrtr-tampered-state",
+          "mrtr-cross-principal-state",
+          "tasks-poll-capability-not-sticky",
+          "mrtr-forged-initial-tool",
+          "mrtr-forged-initial-prompt"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpInteractionsTest#validatesAndBindsMultiRoundTripStateAndCachesReplay",
+          "io.github.enryold.mcp.McpInteractionsTest#elicitationModeMustMatchTheDeclaredCapability",
+          "io.github.enryold.mcp.McpCatalogModuleTest#promptCanCompleteAnEngineManagedInputRequiredRoundTrip"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P16.02",
+      "profileId": "P16",
+      "strength": "SHOULD",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/patterns/mrtr.mdx",
+        "section": "Error Handling and Security Considerations",
+        "lines": "259-272"
+      },
+      "assertion": "Validate elicitation results against the frozen requested schema, ignore unknown response keys, reject tampered state, and replay completed continuations without duplicate effects.",
+      "inventoryOnly": [
+        "mrtr-elicitation-validation",
+        "mrtr-ignore-unknown",
+        "mrtr-replay"
+      ],
+      "evidence": {
+        "wireCases": [
+          "mrtr-elicitation-round-trip",
+          "mrtr-tampered-state",
+          "mrtr-cross-principal-state",
+          "mrtr-forged-initial-tool",
+          "mrtr-forged-initial-prompt"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpInteractionsTest#validatesAndBindsMultiRoundTripStateAndCachesReplay"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P16.03",
+      "profileId": "P16",
+      "strength": "SHOULD",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/patterns/mrtr.mdx",
+        "section": "Error Handling",
+        "lines": "259-267"
+      },
+      "assertion": "Accept valid multiple or partial input responses and re-request every still-missing or invalid response instead of failing the request.",
+      "inventoryOnly": [
+        "mrtr-multiple-inputs",
+        "mrtr-partial-response"
+      ],
+      "evidence": {
+        "wireCases": [
+          "mrtr-multiple-inputs"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpInteractionsTest#validatesAndBindsMultiRoundTripStateAndCachesReplay"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P17.01",
+      "profileId": "P17",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/patterns/progress.mdx",
+        "section": "Progress Flow and Behavior Requirements",
+        "lines": "13-18, 33-38, 53-67, 82-90"
+      },
+      "assertion": "Emit finite progress notifications only for the requesting active token, monotonically before the terminal response, and emit no independent server request.",
+      "inventoryOnly": [
+        "stream-progress-token",
+        "stream-terminal-last",
+        "stream-no-independent-request"
+      ],
+      "evidence": {
+        "wireCases": [
+          "stream-progress",
+          "stream-elicitation-has-no-independent-request",
+          "stream-parallel-progress",
+          "tasks-suppress-request-notifications"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.spring.McpHttpHandlerTest#streamsNotificationsBeforeTheTerminalResponse",
+          "io.github.enryold.mcp.McpNotificationsTest#emitsRequestedProgressMonotonicallyAndFiltersLogs"
+        ],
+        "officialChecks": [
+          "sep-2575-http-server-no-independent-requests-on-stream"
+        ]
+      }
+    },
+    {
+      "id": "P17.02",
+      "profileId": "P17",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/server/utilities/logging.mdx",
+        "section": "Requesting Log Messages",
+        "lines": "58-72"
+      },
+      "assertion": "Emit schema-valid request-scoped log notifications only when the request opts into a log level and before that request terminal response.",
+      "inventoryOnly": [
+        "stream-requested-log",
+        "stream-no-unrequested-log"
+      ],
+      "evidence": {
+        "wireCases": [
+          "stream-requested-log",
+          "stream-no-unrequested-log",
+          "tasks-suppress-request-notifications"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.spring.McpHttpHandlerTest#streamsNotificationsBeforeTheTerminalResponse",
+          "io.github.enryold.mcp.McpNotificationsTest#neverLogsWithoutRequestOptInAndRejectsProgressWithoutToken"
+        ],
+        "officialChecks": [
+          "sep-2575-server-no-log-without-loglevel"
+        ]
+      }
+    },
+    {
+      "id": "P17.03",
+      "profileId": "P17",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/specification/2026-07-28/basic/patterns/subscriptions.mdx",
+        "section": "Opening, acknowledging, and receiving subscriptions",
+        "lines": "7-16, 40-62, 83-114"
+      },
+      "assertion": "Acknowledge subscriptions first, bind every notification to the subscription ID and caller, and enforce exact tool, prompt, resource-list, and resource-URI filters across concurrent streams.",
+      "inventoryOnly": [
+        "subscription-ack-first",
+        "subscription-filter",
+        "subscription-identity",
+        "subscription-concurrency"
+      ],
+      "evidence": {
+        "wireCases": [
+          "subscription-filtered-tool-change",
+          "subscription-prompt-change",
+          "subscription-resource-list-change",
+          "subscription-resource-update-filter",
+          "subscription-resource-update-exact-filter",
+          "subscription-resource-identity-isolation",
+          "stream-parallel-progress",
+          "subscription-empty-listen-cancel"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpEventsTest#acknowledgesFirstFiltersByIdentityAndReauthorizesDelivery",
+          "io.github.enryold.mcp.McpEventsTest#emptyFilterStaysOpenUntilDisconnectAndReleasesItsSlot",
+          "io.github.enryold.mcp.McpEventsTest#resourceEventsHonorListAndExactUriFiltersWithWireData",
+          "io.github.enryold.mcp.spring.McpHttpHandlerTest#sseDisconnectCancelsEmptySubscriptionAndReleasesItsBoundedSlot"
+        ],
+        "officialChecks": [
+          "sep-2575-server-sends-subscription-ack",
+          "sep-2575-server-tags-subscription-id",
+          "sep-2575-server-honors-notification-filter",
+          "sep-2575-server-sends-prompts-list-changed-on-subscription",
+          "sep-2575-server-sends-tools-list-changed-on-subscription"
+        ]
+      }
+    },
+    {
+      "id": "P18.01",
+      "profileId": "P18",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/seps/2663-tasks-extension.mdx",
+        "section": "Capability negotiation, polymorphic results, and task creation",
+        "lines": "120-154, 282-330"
+      },
+      "assertion": "Advertise the Tasks extension, require per-request client opt-in for required tools, and return an opaque strongly visible working task only after durable creation.",
+      "inventoryOnly": [
+        "tasks-extension-capability",
+        "tasks-required-capability",
+        "tasks-strong-create"
+      ],
+      "evidence": {
+        "wireCases": [
+          "tasks-required-capability",
+          "tasks-create-and-complete",
+          "tasks-cross-principal-get",
+          "tasks-domain-error",
+          "tasks-protocol-error",
+          "tasks-poll-capability-not-sticky",
+          "tasks-suppress-request-notifications"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpInteractionsTest#requiredTaskCapabilityFailsBeforeHandlerExecution",
+          "io.github.enryold.mcp.McpInteractionsTest#createsStronglyVisiblePrincipalBoundTaskAndPersistsValidatedCompletion"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P18.02",
+      "profileId": "P18",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/seps/2663-tasks-extension.mdx",
+        "section": "Tasks and Task Polling",
+        "lines": "158-215, 332-368"
+      },
+      "assertion": "Keep task state bounded and caller-bound, authorize every access, expose only the status-specific inline payload, retain it through TTL, and never retry task mutations automatically.",
+      "inventoryOnly": [
+        "tasks-owner-binding",
+        "tasks-status-lifecycle",
+        "tasks-ttl",
+        "tasks-no-retry"
+      ],
+      "evidence": {
+        "wireCases": [
+          "tasks-create-and-complete",
+          "tasks-input-update",
+          "tasks-cancel",
+          "tasks-cross-principal-get",
+          "tasks-domain-error",
+          "tasks-protocol-error",
+          "tasks-poll-capability-not-sticky",
+          "tasks-suppress-request-notifications"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpInteractionsTest#createsStronglyVisiblePrincipalBoundTaskAndPersistsValidatedCompletion",
+          "io.github.enryold.mcp.McpInteractionsTest#taskUsesDetachedLifecycleAndNeverWritesToCompletedHttpSink",
+          "io.github.enryold.mcp.McpInteractionsTest#rejectedTaskSubmissionDoesNotLeaveAnUnreachableStoredTask"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P18.03",
+      "profileId": "P18",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/seps/2663-tasks-extension.mdx",
+        "section": "Task Status and Polling",
+        "lines": "205-215, 352-368"
+      },
+      "assertion": "A completed task contains the validated final result of the original operation; tool-level isError remains completed while JSON-RPC failures use failed with error.",
+      "inventoryOnly": [
+        "tasks-completed-result",
+        "tasks-tool-error-completed",
+        "tasks-protocol-error-failed"
+      ],
+      "evidence": {
+        "wireCases": [
+          "tasks-create-and-complete",
+          "tasks-domain-error",
+          "tasks-protocol-error"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpInteractionsTest#createsStronglyVisiblePrincipalBoundTaskAndPersistsValidatedCompletion"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P18.04",
+      "profileId": "P18",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/seps/2663-tasks-extension.mdx",
+        "section": "Task Update Requests",
+        "lines": "370-409"
+      },
+      "assertion": "Expose all outstanding unique task input requests, accept valid partial updates, ignore unknown or already-satisfied keys, and acknowledge updates with an empty complete result.",
+      "inventoryOnly": [
+        "tasks-input-required",
+        "tasks-update-partial",
+        "tasks-update-ack"
+      ],
+      "evidence": {
+        "wireCases": [
+          "tasks-input-update"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpInteractionsTest#partialTaskResponsesRemainPendingAndUnknownKeysAreIgnored"
+        ],
+        "officialChecks": []
+      }
+    },
+    {
+      "id": "P18.05",
+      "profileId": "P18",
+      "strength": "MUST",
+      "source": {
+        "path": "spec/upstream/docs/seps/2663-tasks-extension.mdx",
+        "section": "Task Cancellation",
+        "lines": "411-438"
+      },
+      "assertion": "Acknowledge tasks/cancel with an empty complete result and cooperatively stop or mark the bound in-progress task cancelled without using notifications/cancelled.",
+      "inventoryOnly": [
+        "tasks-cancel-ack",
+        "tasks-cancelled-status"
+      ],
+      "evidence": {
+        "wireCases": [
+          "tasks-cancel"
+        ],
+        "jvmTests": [
+          "io.github.enryold.mcp.McpInteractionsTest#taskUsesDetachedLifecycleAndNeverWritesToCompletedHttpSink"
+        ],
+        "officialChecks": []
+      }
+    }
+  ],
+  "evidencePolicy": {
+    "wireCases": "Checked-in interop/fixtures/wire-cases.json IDs with reciprocal exact requirement tags.",
+    "jvmTests": "Fully qualified JUnit class and method names in checked-in Java test sources.",
+    "officialChecks": "Exact check IDs in the pinned @modelcontextprotocol/conformance package.",
+    "inventoryOnly": "Planned or illustrative scenario names; never counted as executable evidence.",
+    "openGaps": "Known missing assertions. Applicable MUST and PROFILE_MUST requirements cannot pass the evidence gate while this list is non-empty."
+  }
+}

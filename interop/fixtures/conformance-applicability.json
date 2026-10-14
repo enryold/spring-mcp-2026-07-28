@@ -1,0 +1,382 @@
+{
+  "protocolVersion": "2026-07-28",
+  "profile": "streamable-http-server-tasks",
+  "runner": {
+    "package": "@modelcontextprotocol/conformance",
+    "version": "0.2.0-alpha.12",
+    "repositoryCommit": "c37eec888e1c6ff140af79987a40008548b7cc5f",
+    "requirements": "spec/upstream/requirements.yaml",
+    "requirementsSha256": "ae2f4f6210fd729e2e318edd5bbfa31a43cee0bc608e48052fa26dbf1d939b57"
+  },
+  "classification": {
+    "applicable": "The complete server scenario is inside the first-release profile.",
+    "scoped": "Only named checks are inside the profile. Run the complete scenario for visibility, but do not report the scenario as a profile pass while out-of-profile checks fail or skip.",
+    "unsupported": "Only capabilities outside the authorized HTTP server/Tasks scope; no required server scenario is excluded.",
+    "out_of_role": "The scenario tests an MCP client. This repository's first release implements a server, so it is visible in the frozen requirement set but is not a server-profile gate."
+  },
+  "server": {
+    "officialRequiredCount": 37,
+    "applicableRequired": [
+      {
+        "scenario": "tools-list",
+        "applicableChecks": [
+          "tools-list",
+          "tools-list-deterministic-order",
+          "wire-schema-valid"
+        ],
+        "fixture": "tools/list must return all enabled fixture tools with name, description, and inputSchema; repeated calls preserve order."
+      },
+      {
+        "scenario": "tools-call-simple-text",
+        "applicableChecks": [
+          "tools-call-simple-text"
+        ],
+        "fixture": "Tool test_simple_text takes no arguments and returns a non-empty text block; the runner fixture text is 'This is a simple text response for testing.'."
+      },
+      {
+        "scenario": "tools-call-image",
+        "applicableChecks": [
+          "tools-call-image"
+        ],
+        "fixture": "Tool test_image_content takes no arguments and returns an image block with non-empty base64 data and mimeType image/png."
+      },
+      {
+        "scenario": "tools-call-audio",
+        "applicableChecks": [
+          "tools-call-audio"
+        ],
+        "fixture": "Tool test_audio_content takes no arguments and returns an audio block with non-empty base64 data and mimeType audio/wav."
+      },
+      {
+        "scenario": "tools-call-embedded-resource",
+        "applicableChecks": [
+          "tools-call-embedded-resource"
+        ],
+        "fixture": "Tool test_embedded_resource takes no arguments and returns a resource block whose embedded resource has uri, mimeType, and text or blob."
+      },
+      {
+        "scenario": "tools-call-mixed-content",
+        "applicableChecks": [
+          "tools-call-mixed-content"
+        ],
+        "fixture": "Tool test_multiple_content_types takes no arguments and returns at least text, image, and embedded resource blocks."
+      },
+      {
+        "scenario": "tools-call-error",
+        "applicableChecks": [
+          "tools-call-error"
+        ],
+        "fixture": "Tool test_error_handling takes no arguments and returns isError true with non-empty text content instead of a JSON-RPC error."
+      },
+      {
+        "scenario": "dns-rebinding-protection",
+        "applicableChecks": [
+          "localhost-host-rebinding-rejected",
+          "localhost-host-valid-accepted"
+        ],
+        "fixture": "The conformance endpoint runs on localhost, rejects evil.example.com Host/Origin with 4xx, and accepts its actual localhost Host/Origin with 2xx."
+      },
+      {
+        "scenario": "server-stateless",
+        "applicableChecks": [
+          "sep-2575-request-meta-invalid-missing-meta",
+          "sep-2575-request-meta-invalid-missing-protocol-version",
+          "sep-2575-request-meta-invalid-missing-client-capabilities",
+          "sep-2575-http-server-meta-invalid-400",
+          "sep-2575-request-meta-client-info-optional",
+          "sep-2575-server-implements-discover",
+          "sep-2575-server-identifies-in-result-meta",
+          "sep-2575-server-declares-prompts-in-discover",
+          "sep-2575-discover-capabilities-match-handlers",
+          "sep-2575-server-unsupported-version-error",
+          "sep-2575-http-server-unsupported-version-400",
+          "sep-2575-http-server-header-mismatch-400",
+          "sep-2575-server-rejects-undeclared-capability",
+          "sep-2575-missing-capability-http-400",
+          "sep-2575-http-server-method-not-found-404-initialize",
+          "sep-2575-http-server-method-not-found-404-ping",
+          "sep-2575-http-server-method-not-found-404-logging-setlevel",
+          "sep-2575-http-server-method-not-found-404-resources-subscribe",
+          "sep-2575-http-server-method-not-found-404-resources-unsubscribe",
+          "sep-2575-http-server-method-not-found-404",
+          "sep-2575-http-server-error-jsonrpc-id",
+          "sep-2575-http-server-no-independent-requests-on-stream",
+          "sep-2575-server-no-log-without-loglevel",
+          "sep-2575-server-sends-subscription-ack",
+          "sep-2575-server-tags-subscription-id",
+          "sep-2575-server-honors-notification-filter",
+          "sep-2575-server-sends-prompts-list-changed-on-subscription",
+          "sep-2575-server-sends-tools-list-changed-on-subscription"
+        ],
+        "fixture": "Expanded server profile: all checks in this scenario apply."
+      },
+      {
+        "scenario": "caching",
+        "applicableChecks": [
+          "sep-2549-tools-list-caching-hints",
+          "sep-2549-ttl-non-negative",
+          "sep-2549-cache-scope-valid",
+          "sep-2549-prompts-list-caching-hints",
+          "sep-2549-resources-list-caching-hints",
+          "sep-2549-resources-templates-list-caching-hints",
+          "sep-2549-resources-read-caching-hints"
+        ],
+        "fixture": "Expanded server profile: all checks in this scenario apply."
+      },
+      {
+        "scenario": "completion-complete"
+      },
+      {
+        "scenario": "tools-call-with-progress",
+        "fixture": "Would require test_tool_with_progress and progress frames 0/100, 50/100, 100/100 when progressToken is supplied."
+      },
+      {
+        "scenario": "server-sse-multiple-streams"
+      },
+      {
+        "scenario": "resources-list"
+      },
+      {
+        "scenario": "resources-read-text"
+      },
+      {
+        "scenario": "resources-read-binary"
+      },
+      {
+        "scenario": "resources-templates-read"
+      },
+      {
+        "scenario": "sep-2164-resource-not-found"
+      },
+      {
+        "scenario": "prompts-list"
+      },
+      {
+        "scenario": "prompts-get-simple"
+      },
+      {
+        "scenario": "prompts-get-with-args"
+      },
+      {
+        "scenario": "prompts-get-embedded-resource"
+      },
+      {
+        "scenario": "prompts-get-with-image"
+      },
+      {
+        "scenario": "input-required-result-basic-elicitation"
+      },
+      {
+        "scenario": "input-required-result-basic-sampling"
+      },
+      {
+        "scenario": "input-required-result-basic-list-roots"
+      },
+      {
+        "scenario": "input-required-result-request-state"
+      },
+      {
+        "scenario": "input-required-result-multiple-input-requests"
+      },
+      {
+        "scenario": "input-required-result-multi-round"
+      },
+      {
+        "scenario": "input-required-result-missing-input-response"
+      },
+      {
+        "scenario": "input-required-result-non-tool-request"
+      },
+      {
+        "scenario": "input-required-result-result-type"
+      },
+      {
+        "scenario": "input-required-result-unsupported-methods"
+      },
+      {
+        "scenario": "input-required-result-tampered-state"
+      },
+      {
+        "scenario": "input-required-result-capability-check"
+      },
+      {
+        "scenario": "input-required-result-ignore-extra-params"
+      },
+      {
+        "scenario": "input-required-result-validate-input"
+      }
+    ],
+    "scopedRequired": [],
+    "unsupportedRequired": [],
+    "notScored": {
+      "applicable": [
+        {
+          "scenario": "json-schema-2020-12",
+          "reason": "pending",
+          "applicableChecks": [
+            "json-schema-2020-12-$schema",
+            "json-schema-2020-12-$defs",
+            "json-schema-2020-12-additionalProperties",
+            "sep-2106-composition-keywords-preserved",
+            "sep-2106-conditional-keywords-preserved",
+            "sep-2106-anchor-keyword-preserved"
+          ],
+          "fixture": "Advertise json_schema_2020_12_tool with the runner's exact $schema, $defs/address/$anchor, allOf/anyOf, if/then/else, and additionalProperties:false input schema."
+        },
+        {
+          "scenario": "http-header-validation",
+          "reason": "pending",
+          "applicableChecks": [
+            "sep-2243-server-reject-invalid-headers",
+            "sep-2243-server-reject-error-code",
+            "sep-2243-header-name-case-insensitive",
+            "sep-2243-server-decode-base64"
+          ],
+          "fixture": "Advertise at least one callable tool so Mcp-Name mismatch, missing-name, whitespace, and case checks can run."
+        },
+        {
+          "scenario": "http-custom-header-server-validation",
+          "reason": "pending",
+          "applicableChecks": [
+            "sep-2243-server-reject-invalid-param-chars",
+            "sep-2243-server-reject-param-mismatch",
+            "sep-2243-server-validate-param-match"
+          ],
+          "fixture": "Advertise at least one callable tool with a statically reachable string property carrying x-mcp-header; include defaults for any other required properties."
+        },
+        {
+          "scenario": "tasks-lifecycle",
+          "reason": "extension",
+          "fixture": "Implemented pinned Tasks extension fixture; tooling checks remain visible."
+        },
+        {
+          "scenario": "tasks-capability-negotiation",
+          "reason": "extension",
+          "fixture": "Implemented pinned Tasks extension fixture; tooling checks remain visible."
+        },
+        {
+          "scenario": "tasks-wire-fields",
+          "reason": "extension",
+          "fixture": "Implemented pinned Tasks extension fixture; tooling checks remain visible."
+        },
+        {
+          "scenario": "tasks-request-state-removal",
+          "reason": "extension",
+          "fixture": "Implemented pinned Tasks extension fixture; tooling checks remain visible."
+        },
+        {
+          "scenario": "tasks-mrtr-input",
+          "reason": "extension",
+          "fixture": "Implemented pinned Tasks extension fixture; tooling checks remain visible."
+        },
+        {
+          "scenario": "tasks-request-headers",
+          "reason": "extension",
+          "fixture": "Implemented pinned Tasks extension fixture; tooling checks remain visible."
+        },
+        {
+          "scenario": "tasks-dispatch-and-envelope",
+          "reason": "extension",
+          "fixture": "Implemented pinned Tasks extension fixture; tooling checks remain visible."
+        },
+        {
+          "scenario": "tasks-status-notifications",
+          "reason": "extension",
+          "fixture": "Implemented pinned Tasks extension fixture; tooling checks remain visible."
+        },
+        {
+          "scenario": "tasks-required-task-error",
+          "reason": "extension",
+          "fixture": "Implemented pinned Tasks extension fixture; tooling checks remain visible."
+        },
+        {
+          "scenario": "tasks-mrtr-composition",
+          "reason": "extension",
+          "fixture": "Implemented pinned Tasks extension fixture; tooling checks remain visible."
+        }
+      ],
+      "unsupported": []
+    }
+  },
+  "client": {
+    "classification": "out_of_role",
+    "officialRequiredCount": 32,
+    "officialRequired": [
+      "tools_call",
+      "request-metadata",
+      "auth/metadata-default",
+      "auth/metadata-var1",
+      "auth/metadata-var2",
+      "auth/metadata-var3",
+      "auth/basic-cimd",
+      "auth/scope-from-www-authenticate",
+      "auth/scope-from-scopes-supported",
+      "auth/scope-omitted-when-undefined",
+      "auth/scope-step-up",
+      "auth/scope-retry-limit",
+      "auth/token-endpoint-auth-basic",
+      "auth/token-endpoint-auth-post",
+      "auth/token-endpoint-auth-none",
+      "auth/pre-registration",
+      "auth/resource-mismatch",
+      "auth/offline-access-scope",
+      "auth/offline-access-not-supported",
+      "auth/authorization-server-migration",
+      "auth/iss-supported",
+      "auth/iss-not-advertised",
+      "auth/iss-supported-missing",
+      "auth/iss-wrong-issuer",
+      "auth/iss-unexpected",
+      "auth/iss-normalized",
+      "auth/metadata-issuer-mismatch",
+      "sep-2322-client-request-state",
+      "http-standard-headers",
+      "http-custom-headers",
+      "http-invalid-tool-headers",
+      "json-schema-ref-no-deref"
+    ],
+    "notScored": [
+      {
+        "scenario": "auth/client-credentials-jwt",
+        "reason": "extension"
+      },
+      {
+        "scenario": "auth/client-credentials-basic",
+        "reason": "extension"
+      },
+      {
+        "scenario": "auth/enterprise-managed-authorization",
+        "reason": "extension"
+      },
+      {
+        "scenario": "auth/dpop",
+        "reason": "extension"
+      },
+      {
+        "scenario": "auth/dpop-nonce",
+        "reason": "extension"
+      },
+      {
+        "scenario": "auth/wif-jwt-bearer",
+        "reason": "extension"
+      },
+      {
+        "scenario": "json-schema-2020-12-preservation",
+        "reason": "added-after-release"
+      }
+    ]
+  },
+  "reportingRules": [
+    "All 37 required server scenarios are applicable in the expanded profile.",
+    "The 13 server non-scored/extension scenarios remain visible and separate from the frozen score.",
+    "Any required implementation failure or skipped required scenario fails the expanded gate.",
+    "Pinned runner pending/skipped extension checks are tooling limits, never implementation passes.",
+    "Client-only requirements remain out of role for this HTTP server implementation."
+  ],
+  "independentCoverageGaps": [
+    "The runner does not replace raw-wire cases for malformed JSON, invalid envelopes, batches, wrong request Content-Type, body limits, authorization isolation, output-schema failures, mutation counts, or timeout-after-commit.",
+    "The caching scenario does not check server/discover caching hints.",
+    "No required server scenario proves protected catalogs use private cacheScope or avoid cross-principal cache reuse.",
+    "The official tool scenarios do not prove input/output JSON Schema enforcement or no hidden mutation retry."
+  ]
+}

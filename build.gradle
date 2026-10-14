@@ -1,0 +1,118 @@
+plugins {
+    id 'base'
+    alias(libs.plugins.spring.boot) apply false
+}
+allprojects {
+    group = 'io.github.enryold'
+    version = '0.1.0-SNAPSHOT'
+}
+subprojects {
+    apply plugin: 'java-library'
+    java {
+        toolchain { languageVersion = JavaLanguageVersion.of(21) }
+        if (project.name != 'api-server') {
+            withSourcesJar()
+            withJavadocJar()
+        }
+    }
+    dependencies {
+        implementation platform(rootProject.libs.spring.boot.bom)
+        annotationProcessor platform(rootProject.libs.spring.boot.bom)
+        testImplementation rootProject.libs.junit.jupiter
+        testImplementation rootProject.libs.assertj
+        testRuntimeOnly rootProject.libs.junit.launcher
+    }
+    dependencyLocking { lockAllConfigurations() }
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        options.compilerArgs.add('-parameters')
+    }
+    tasks.withType(Test).configureEach { useJUnitPlatform() }
+    tasks.withType(AbstractArchiveTask).configureEach {
+        preserveFileTimestamps = false
+        reproducibleFileOrder = true
+    }
+    tasks.register('resolveDependencies') {
+        group = 'build setup'
+        description = 'Resolve dependencies, including annotation processors and test runtimes.'
+        doLast {
+            configurations.findAll { it.canBeResolved }.each { it.resolve() }
+        }
+    }
+}
+tasks.named('check') { dependsOn subprojects.collect { it.tasks.named('check') } }
+tasks.named('assemble') { dependsOn subprojects.collect { it.tasks.named('assemble') } }
+tasks.register('resolveDependencies') {
+    group = 'build setup'
+    dependsOn subprojects.collect { it.tasks.named('resolveDependencies') }
+}
+configure(subprojects.findAll { it.name != 'api-server' }) {
+    plugins.withId('maven-publish') {
+        publishing {
+            repositories {
+                maven {
+                    name = 'Consumer'
+                    url = rootProject.layout.buildDirectory.dir('consumer-repository')
+                }
+            }
+        }
+    }
+}
+['4.0.8', '4.1.1', '4.0.0'].each { bootVersion ->
+    tasks.register("consumerSmoke${bootVersion.replace('.', '_')}", Exec) {
+        dependsOn subprojects.findAll { it.name != 'api-server' }.collect {
+            it.tasks.named('publishMavenJavaPublicationToConsumerRepository')
+        }
+        commandLine './gradlew', '-p', 'tests/consumer', 'test',
+                "-PbootVersion=${bootVersion}",
+                "-PmcpRepository=${layout.buildDirectory.dir('consumer-repository').get().asFile.toURI()}",
+                "--project-cache-dir=${layout.buildDirectory.dir("consumer-cache-${bootVersion}").get().asFile}",
+                "--rerun-tasks"
+    }
+}
+tasks.register('consumerSmokeTest') {
+    group = 'verification'
+    dependsOn 'consumerSmoke4_0_8', 'consumerSmoke4_1_1'
+}
+tasks.register('verifyLibraryArtifacts') {
+    group = 'verification'
+    dependsOn subprojects.findAll { it.name != 'api-server' }.collectMany {
+        [it.tasks.named('jar'), it.tasks.named('generatePomFileForMavenJavaPublication')]
+    }
+    doLast {
+        subprojects.findAll { it.name != 'api-server' }.each { library ->
+            def jarFile = library.tasks.named('jar').get().archiveFile.get().asFile
+            new java.util.zip.ZipFile(jarFile).withCloseable { jar ->
+                assert !jar.entries().toList().any { it.name.startsWith('BOOT-INF/') }
+                if (library.name == 'mcp-2026-spring-boot') {
+                    def imports = jar.getEntry('META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports')
+                    assert imports != null
+                    assert jar.getInputStream(imports).getText('UTF-8').trim() == 'io.github.enryold.mcp.spring.McpAutoConfiguration'
+                    def metadata = new groovy.json.JsonSlurper().parse(
+                            jar.getInputStream(jar.getEntry('META-INF/spring-configuration-metadata.json')))
+                    assert metadata.properties.find { it.name == 'enryold.mcp.enabled' }.defaultValue == false
+                    assert metadata.properties.find { it.name == 'enryold.mcp.path' }.defaultValue == '/mcp'
+                    assert jar.getEntry('META-INF/spring-autoconfigure-metadata.properties') != null
+                }
+                if (library.name == 'mcp-2026-core') {
+                    assert !jar.entries().toList().any { it.name.startsWith('org/springframework/') }
+                    assert jar.getEntry('io/github/enryold/mcp/schema-2026-07-28.json') != null
+                    assert jar.getEntry('META-INF/licenses/MCP-SCHEMA-LICENSE') != null
+                }
+            }
+            def pom = new groovy.xml.XmlSlurper().parse(
+                    library.layout.buildDirectory.file('publications/mavenJava/pom-default.xml').get().asFile)
+            assert pom.groupId.text() == 'io.github.enryold'
+            assert pom.artifactId.text() == library.name
+            assert !pom.dependencies.dependency.any { it.artifactId.text().contains('api-server') }
+            if (library.name == 'mcp-2026-core') {
+                assert pom.dependencies.dependency.find { it.artifactId.text() == 'json-schema-validator' }.scope.text() == 'runtime'
+            }
+            if (library.name == 'mcp-2026-spring-boot-starter') {
+                assert pom.dependencies.dependency.find { it.artifactId.text() == 'mcp-2026-core' }.scope.text() == 'compile'
+                assert pom.dependencies.dependency.find { it.artifactId.text() == 'mcp-2026-spring-boot' }.scope.text() == 'compile'
+            }
+        }
+    }
+}
+tasks.named('check') { dependsOn 'verifyLibraryArtifacts' }

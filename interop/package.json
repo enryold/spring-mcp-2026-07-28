@@ -1,0 +1,36 @@
+{
+  "name": "spring-mcp-2026-interop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "check": "npm run typecheck && npm test",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test test/*.test.ts",
+    "reference": "node --import tsx src/reference.ts",
+    "reference:check": "node --import tsx src/reference-check.ts",
+    "comparator:test": "node --import tsx --test test/comparator.test.ts",
+    "e2e": "node --import tsx src/e2e.ts",
+    "e2e:all": "npm run check && npm run reference:check && npm run e2e && npm run sdk:interop && npm run conformance:profile",
+    "client:e2e": "node --import tsx src/client-e2e.ts",
+    "conformance:list": "conformance list --requirements 2026-07-28",
+    "conformance:java": "conformance server --url http://127.0.0.1:18080/mcp --requirements 2026-07-28",
+    "sdk:interop": "node --import tsx src/client-e2e.ts",
+    "conformance:profile": "node --import tsx src/conformance-profile.ts"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "2.3.1",
+    "@modelcontextprotocol/conformance": "0.2.0-alpha.12",
+    "@modelcontextprotocol/core": "2.3.1",
+    "@modelcontextprotocol/node": "2.1.1",
+    "@modelcontextprotocol/server": "2.3.1",
+    "@types/node": "24.19.2",
+    "ajv": "8.20.0",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "zod": "4.6.7"
+  }
+}

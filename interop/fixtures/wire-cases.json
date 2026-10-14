@@ -1,0 +1,2964 @@
+[
+  {
+    "id": "discover-direct",
+    "requirements": [
+      "P03.01",
+      "P03.03",
+      "P06.01",
+      "P10.04"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "server/discover",
+      "id": "discover-1",
+      "params": {}
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "cacheScope": "private",
+      "ttlMs": 0
+    }
+  },
+  {
+    "id": "catalog-write",
+    "requirements": [
+      "P04.01",
+      "P10.01",
+      "P10.03"
+    ],
+    "token": "alice-write",
+    "request": {
+      "mcpMethod": "tools/list",
+      "id": 2,
+      "params": {}
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "toolNames": [
+        "fixture.echo",
+        "fixture.error",
+        "fixture.item.create",
+        "fixture.item.createSlow",
+        "fixture.item.read",
+        "fixture.slow"
+      ]
+    }
+  },
+  {
+    "id": "catalog-read",
+    "requirements": [
+      "P04.01",
+      "P10.01",
+      "P10.03"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/list",
+      "id": 3,
+      "params": {}
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "toolNames": [
+        "fixture.echo",
+        "fixture.error",
+        "fixture.item.read",
+        "fixture.slow"
+      ]
+    }
+  },
+  {
+    "id": "call-echo-unicode",
+    "requirements": [
+      "P05.03"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.echo",
+      "id": "echo-\u2615",
+      "params": {
+        "name": "fixture.echo",
+        "arguments": {
+          "text": "Caff\u00e8 \u2615 & MCP"
+        }
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "structuredContent": {
+        "text": "Caff\u00e8 \u2615 & MCP"
+      }
+    }
+  },
+  {
+    "id": "call-read-red-seed",
+    "requirements": [
+      "P05.03",
+      "P10.03"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.item.read",
+      "id": 5,
+      "params": {
+        "name": "fixture.item.read",
+        "arguments": {
+          "id": "seed"
+        }
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "structuredPath": {
+        "tenantId": "red",
+        "value": "seeded"
+      }
+    }
+  },
+  {
+    "id": "call-read-blue-seed",
+    "requirements": [
+      "P05.03",
+      "P10.03"
+    ],
+    "token": "bob-write",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.item.read",
+      "id": 6,
+      "params": {
+        "name": "fixture.item.read",
+        "arguments": {
+          "id": "seed"
+        }
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "structuredPath": {
+        "tenantId": "blue",
+        "value": "seeded"
+      }
+    }
+  },
+  {
+    "id": "call-read-missing",
+    "requirements": [
+      "P05.03",
+      "P06.02",
+      "P10.03"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.item.read",
+      "id": "missing",
+      "params": {
+        "name": "fixture.item.read",
+        "arguments": {
+          "id": "absent"
+        }
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "isError": true,
+      "contentIncludes": "item_not_found"
+    }
+  },
+  {
+    "id": "call-create-once",
+    "requirements": [
+      "P05.05",
+      "P12.03"
+    ],
+    "token": "alice-write",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.item.create",
+      "id": 7,
+      "params": {
+        "name": "fixture.item.create",
+        "arguments": {
+          "id": "new",
+          "value": "created"
+        }
+      }
+    },
+    "stateTokens": [
+      "alice-read"
+    ],
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "structuredPath": {
+        "tenantId": "red",
+        "id": "new"
+      },
+      "stateCounts": {
+        "alice-read": {
+          "create": 1
+        }
+      }
+    }
+  },
+  {
+    "id": "call-create-duplicate",
+    "requirements": [
+      "P05.05",
+      "P06.02",
+      "P12.03"
+    ],
+    "before": [
+      {
+        "token": "alice-write",
+        "request": {
+          "mcpMethod": "tools/call",
+          "mcpName": "fixture.item.create",
+          "id": "first-create",
+          "params": {
+            "name": "fixture.item.create",
+            "arguments": {
+              "id": "duplicate",
+              "value": "first"
+            }
+          }
+        }
+      }
+    ],
+    "token": "alice-write",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.item.create",
+      "id": "duplicate-create",
+      "params": {
+        "name": "fixture.item.create",
+        "arguments": {
+          "id": "duplicate",
+          "value": "second"
+        }
+      }
+    },
+    "stateTokens": [
+      "alice-read"
+    ],
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "isError": true,
+      "contentIncludes": "item_exists",
+      "stateCounts": {
+        "alice-read": {
+          "create": 1
+        }
+      }
+    }
+  },
+  {
+    "id": "error-expected",
+    "requirements": [
+      "P06.01",
+      "P06.02"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.error",
+      "id": 8,
+      "params": {
+        "name": "fixture.error",
+        "arguments": {
+          "kind": "expected"
+        }
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "isError": true,
+      "contentIncludes": "fixture_conflict"
+    }
+  },
+  {
+    "id": "error-unexpected-sanitized",
+    "requirements": [
+      "P06.05"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.error",
+      "id": 9,
+      "params": {
+        "name": "fixture.error",
+        "arguments": {
+          "kind": "unexpected"
+        }
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "isError": true,
+      "contentIncludes": "internal_error",
+      "contentExcludes": "fixture exploded"
+    }
+  },
+  {
+    "id": "schema-missing-input",
+    "requirements": [
+      "P05.02",
+      "P06.03"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.echo",
+      "id": 10,
+      "params": {
+        "name": "fixture.echo",
+        "arguments": {}
+      }
+    },
+    "ignorePaths": [
+      "$body.result.content.0.text"
+    ],
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "isError": true
+    }
+  },
+  {
+    "id": "schema-extra-input",
+    "requirements": [
+      "P05.02",
+      "P06.03"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.echo",
+      "id": 11,
+      "params": {
+        "name": "fixture.echo",
+        "arguments": {
+          "text": "ok",
+          "extra": true
+        }
+      }
+    },
+    "ignorePaths": [
+      "$body.result.content.0.text"
+    ],
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "isError": true
+    }
+  },
+  {
+    "id": "unknown-tool",
+    "requirements": [
+      "P06.02",
+      "P06.03"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.missing",
+      "id": 12,
+      "params": {
+        "name": "fixture.missing",
+        "arguments": {}
+      }
+    },
+    "assert": {
+      "status": 200,
+      "errorCode": -32602
+    }
+  },
+  {
+    "id": "wire-malformed-json",
+    "requirements": [
+      "P01.02",
+      "P01.03"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/list",
+      "bodyRaw": "{not-json"
+    },
+    "ignorePaths": [
+      "$body.error.message",
+      "$body.id"
+    ],
+    "assert": {
+      "status": 400,
+      "errorCode": -32700,
+      "idPresence": "absent"
+    },
+    "referenceAssert": {
+      "idPresence": "null"
+    }
+  },
+  {
+    "id": "wire-batch-rejected",
+    "requirements": [
+      "P01.02",
+      "P01.03",
+      "P01.04"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/list",
+      "body": []
+    },
+    "ignorePaths": [
+      "$body.error.message",
+      "$body.id"
+    ],
+    "assert": {
+      "status": 400,
+      "errorCode": -32600,
+      "idPresence": "absent"
+    },
+    "referenceAssert": {
+      "idPresence": "null"
+    }
+  },
+  {
+    "id": "wire-boolean-id-rejected",
+    "requirements": [
+      "P01.01",
+      "P01.02",
+      "P01.03"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/list",
+      "body": {
+        "jsonrpc": "2.0",
+        "id": true,
+        "method": "tools/list",
+        "params": {
+          "_meta": {
+            "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+            "io.modelcontextprotocol/clientCapabilities": {}
+          }
+        }
+      }
+    },
+    "ignorePaths": [
+      "$body.error.message",
+      "$body.id"
+    ],
+    "assert": {
+      "status": 400,
+      "errorCode": -32600,
+      "idPresence": "absent"
+    },
+    "referenceAssert": {
+      "idPresence": "null"
+    }
+  },
+  {
+    "id": "wire-missing-method",
+    "requirements": [
+      "P01.02",
+      "P01.03"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/list",
+      "body": {
+        "jsonrpc": "2.0",
+        "id": 14,
+        "params": {
+          "_meta": {
+            "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+            "io.modelcontextprotocol/clientCapabilities": {}
+          }
+        }
+      }
+    },
+    "ignorePaths": [
+      "$body.error.message",
+      "$body.id"
+    ],
+    "assert": {
+      "status": 400,
+      "errorCode": -32600,
+      "idValue": 14
+    },
+    "referenceAssert": {
+      "idPresence": "null",
+      "idValue": null
+    }
+  },
+  {
+    "id": "meta-unsupported-version",
+    "requirements": [
+      "P02.04",
+      "P07.03"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/list",
+      "protocolVersion": "2026-01-01",
+      "id": 15,
+      "params": {}
+    },
+    "assert": {
+      "status": 400,
+      "errorCode": -32022
+    }
+  },
+  {
+    "id": "meta-header-body-conflict",
+    "requirements": [
+      "P07.03"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/list",
+      "protocolVersion": "2026-07-28",
+      "bodyProtocolVersion": "2026-01-01",
+      "id": 16,
+      "params": {}
+    },
+    "ignorePaths": [
+      "$body.error.message",
+      "$body.error.data"
+    ],
+    "assert": {
+      "status": 400,
+      "errorCode": -32020
+    }
+  },
+  {
+    "id": "meta-envelope-missing",
+    "requirements": [
+      "P02.01"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/list",
+      "body": {
+        "jsonrpc": "2.0",
+        "id": "missing-meta",
+        "method": "tools/list",
+        "params": {}
+      }
+    },
+    "ignorePaths": [
+      "$body.error.message",
+      "$body.error.data"
+    ],
+    "assert": {
+      "status": 400,
+      "errorCode": -32602
+    }
+  },
+  {
+    "id": "meta-method-header-conflict",
+    "requirements": [
+      "P07.04"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/list",
+      "bodyMethod": "server/discover",
+      "id": "method-conflict",
+      "params": {}
+    },
+    "ignorePaths": [
+      "$body.error.message",
+      "$body.error.data"
+    ],
+    "assert": {
+      "status": 400,
+      "errorCode": -32020
+    }
+  },
+  {
+    "id": "meta-name-header-conflict",
+    "requirements": [
+      "P07.04"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.echo",
+      "id": "name-conflict",
+      "params": {
+        "name": "fixture.item.read",
+        "arguments": {
+          "id": "seed"
+        }
+      }
+    },
+    "ignorePaths": [
+      "$body.error.message",
+      "$body.error.data"
+    ],
+    "assert": {
+      "status": 400,
+      "errorCode": -32020
+    }
+  },
+  {
+    "id": "http-wrong-content-type",
+    "requirements": [
+      "P07.02"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/list",
+      "contentType": "text/plain",
+      "id": 17,
+      "params": {}
+    },
+    "ignorePaths": [
+      "$body.error.message",
+      "$body.id"
+    ],
+    "assert": {
+      "status": 415,
+      "errorCode": -32000,
+      "idPresence": "absent"
+    },
+    "referenceAssert": {
+      "idPresence": "null"
+    }
+  },
+  {
+    "id": "http-accept-incomplete",
+    "requirements": [
+      "P07.09"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/list",
+      "accept": null,
+      "id": 18,
+      "params": {}
+    },
+    "skipDifferential": true,
+    "assert": {
+      "status": 406
+    },
+    "referenceAssert": {
+      "status": 200
+    }
+  },
+  {
+    "id": "http-accept-wrong",
+    "requirements": [
+      "P07.09"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/list",
+      "accept": "text/plain",
+      "id": "wrong-accept",
+      "params": {}
+    },
+    "skipDifferential": true,
+    "ignorePaths": [
+      "$body.error.message"
+    ],
+    "assert": {
+      "status": 406
+    },
+    "referenceAssert": {
+      "status": 200
+    }
+  },
+  {
+    "id": "http-get-rejected",
+    "requirements": [
+      "P07.01",
+      "P08.02"
+    ],
+    "token": "alice-read",
+    "request": {
+      "httpMethod": "GET",
+      "mcpMethod": "tools/list"
+    },
+    "ignorePaths": [
+      "$body.error.message",
+      "$body.id"
+    ],
+    "assert": {
+      "status": 405,
+      "errorCode": -32000,
+      "idPresence": "absent"
+    },
+    "referenceAssert": {
+      "idPresence": "null"
+    }
+  },
+  {
+    "id": "security-origin-rejected",
+    "requirements": [
+      "P09.01"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/list",
+      "origin": "https://evil.example",
+      "id": 19,
+      "params": {}
+    },
+    "ignorePaths": [
+      "$body.error.message",
+      "$body.id"
+    ],
+    "assert": {
+      "status": 403,
+      "errorCode": -32000,
+      "idPresence": "absent"
+    },
+    "referenceAssert": {
+      "idPresence": "null"
+    }
+  },
+  {
+    "id": "identity-missing",
+    "requirements": [
+      "P10.01",
+      "P10.02"
+    ],
+    "request": {
+      "mcpMethod": "tools/list",
+      "id": 20,
+      "params": {}
+    },
+    "assert": {
+      "status": 401,
+      "errorCode": -32001
+    }
+  },
+  {
+    "id": "identity-revoked",
+    "requirements": [
+      "P10.01"
+    ],
+    "token": "revoked",
+    "request": {
+      "mcpMethod": "tools/list",
+      "id": 21,
+      "params": {}
+    },
+    "assert": {
+      "status": 401,
+      "errorCode": -32001
+    }
+  },
+  {
+    "id": "identity-stale-catalog-denied",
+    "requirements": [
+      "P10.01",
+      "P10.03"
+    ],
+    "before": [
+      {
+        "token": "alice-write",
+        "request": {
+          "mcpMethod": "tools/list",
+          "id": "stale-list",
+          "params": {}
+        }
+      }
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.item.create",
+      "id": "stale-call",
+      "params": {
+        "name": "fixture.item.create",
+        "arguments": {
+          "id": "denied",
+          "value": "never-created"
+        }
+      }
+    },
+    "stateTokens": [
+      "alice-read"
+    ],
+    "assert": {
+      "status": 403,
+      "errorCode": -32001,
+      "headerValues": {
+        "www-authenticate": "Bearer error=\"insufficient_scope\""
+      },
+      "stateCounts": {
+        "alice-read": {
+          "create": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "identity-parallel-tenants",
+    "requirements": [
+      "P08.01",
+      "P10.03"
+    ],
+    "parallelBefore": [
+      {
+        "token": "alice-write",
+        "request": {
+          "mcpMethod": "tools/call",
+          "mcpName": "fixture.item.create",
+          "id": "parallel-red",
+          "params": {
+            "name": "fixture.item.create",
+            "arguments": {
+              "id": "shared",
+              "value": "red-value"
+            }
+          }
+        }
+      },
+      {
+        "token": "bob-write",
+        "request": {
+          "mcpMethod": "tools/call",
+          "mcpName": "fixture.item.create",
+          "id": "parallel-blue",
+          "params": {
+            "name": "fixture.item.create",
+            "arguments": {
+              "id": "shared",
+              "value": "blue-value"
+            }
+          }
+        }
+      }
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.item.read",
+      "id": "parallel-read",
+      "params": {
+        "name": "fixture.item.read",
+        "arguments": {
+          "id": "shared"
+        }
+      }
+    },
+    "stateTokens": [
+      "alice-read",
+      "bob-write"
+    ],
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "structuredPath": {
+        "tenantId": "red",
+        "value": "red-value"
+      },
+      "stateCounts": {
+        "alice-read": {
+          "create": 1
+        },
+        "bob-write": {
+          "create": 1
+        }
+      }
+    }
+  },
+  {
+    "id": "limits-body-size",
+    "requirements": [
+      "P09.04"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.echo",
+      "id": 22,
+      "params": {
+        "name": "fixture.echo",
+        "arguments": {
+          "textRepeat": 70000
+        }
+      }
+    },
+    "ignorePaths": [
+      "$body.error.message",
+      "$body.id"
+    ],
+    "assert": {
+      "status": 413,
+      "errorCode": -32000,
+      "idPresence": "absent"
+    },
+    "referenceAssert": {
+      "idPresence": "null"
+    }
+  },
+  {
+    "id": "deadline-slow",
+    "requirements": [
+      "P12.01"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.slow",
+      "id": 23,
+      "params": {
+        "name": "fixture.slow",
+        "arguments": {
+          "delayMs": 5
+        }
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "structuredContent": {
+        "delayMs": 5
+      }
+    }
+  },
+  {
+    "id": "wire-id-null",
+    "requirements": [
+      "P01.01"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/list",
+      "id": null,
+      "params": {}
+    },
+    "ignorePaths": [
+      "$body.error.message",
+      "$body.id"
+    ],
+    "assert": {
+      "status": 400,
+      "errorCode": -32600,
+      "idPresence": "absent"
+    },
+    "referenceAssert": {
+      "idPresence": "null"
+    }
+  },
+  {
+    "id": "capability-tools-exact",
+    "requirements": [
+      "P03.01",
+      "P11.01",
+      "P11.02"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "server/discover",
+      "id": "capabilities",
+      "params": {}
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "resultPath": {
+        "capabilities.tools": {}
+      },
+      "resultAbsentPaths": [
+        "capabilities.tools.listChanged",
+        "capabilities.resources",
+        "capabilities.prompts"
+      ]
+    }
+  },
+  {
+    "id": "schema-nested-composed-valid",
+    "requirements": [
+      "P05.02",
+      "P09.02"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "json_schema_2020_12_tool",
+      "id": "nested-valid",
+      "params": {
+        "name": "json_schema_2020_12_tool",
+        "arguments": {
+          "name": "Alice",
+          "address": {
+            "street": "1 Main",
+            "city": "Rome"
+          },
+          "contactMethod": "email",
+          "email": "a@example.test"
+        }
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "contentIncludes": "ok",
+      "isErrorPresence": "absent"
+    }
+  },
+  {
+    "id": "schema-nested-composed-invalid",
+    "requirements": [
+      "P05.02",
+      "P09.02"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "json_schema_2020_12_tool",
+      "id": "nested-invalid",
+      "params": {
+        "name": "json_schema_2020_12_tool",
+        "arguments": {
+          "contactMethod": "phone",
+          "email": "a@example.test"
+        }
+      }
+    },
+    "ignorePaths": [
+      "$body.result.content.0.text"
+    ],
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "isError": true
+    }
+  },
+  {
+    "id": "schema-output-violation",
+    "requirements": [
+      "P05.03",
+      "P06.05",
+      "P09.03"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_output_violation",
+      "id": "bad-output",
+      "params": {
+        "name": "test_output_violation",
+        "arguments": {}
+      }
+    },
+    "ignorePaths": [
+      "$body.result.content.0.text"
+    ],
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "isError": true,
+      "contentExcludes": "invalid output"
+    }
+  },
+  {
+    "id": "call-content-text",
+    "requirements": [
+      "P05.04"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_simple_text",
+      "id": "content-text",
+      "params": {
+        "name": "test_simple_text",
+        "arguments": {}
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "contentTypes": [
+        "text"
+      ],
+      "contentIncludes": "simple text response"
+    }
+  },
+  {
+    "id": "call-content-image",
+    "requirements": [
+      "P05.04"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_image_content",
+      "id": "content-image",
+      "params": {
+        "name": "test_image_content",
+        "arguments": {}
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "contentTypes": [
+        "image"
+      ],
+      "contentIncludes": "image/png"
+    }
+  },
+  {
+    "id": "call-content-audio",
+    "requirements": [
+      "P05.04"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_audio_content",
+      "id": "content-audio",
+      "params": {
+        "name": "test_audio_content",
+        "arguments": {}
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "contentTypes": [
+        "audio"
+      ],
+      "contentIncludes": "audio/wav"
+    }
+  },
+  {
+    "id": "call-content-resource-link",
+    "requirements": [
+      "P05.04"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_resource_link",
+      "id": "content-link",
+      "params": {
+        "name": "test_resource_link",
+        "arguments": {}
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "contentTypes": [
+        "resource_link"
+      ],
+      "contentIncludes": "test://resource-link"
+    }
+  },
+  {
+    "id": "call-content-embedded-resource",
+    "requirements": [
+      "P05.04"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_embedded_resource",
+      "id": "content-resource",
+      "params": {
+        "name": "test_embedded_resource",
+        "arguments": {}
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "contentTypes": [
+        "resource"
+      ],
+      "contentIncludes": "embedded resource content"
+    }
+  },
+  {
+    "id": "call-content-mixed",
+    "requirements": [
+      "P05.04"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_multiple_content_types",
+      "id": "content-mixed",
+      "params": {
+        "name": "test_multiple_content_types",
+        "arguments": {}
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "contentTypes": [
+        "text",
+        "image",
+        "resource"
+      ],
+      "contentIncludes": "mixed-content-resource"
+    }
+  },
+  {
+    "id": "meta-required-capability-missing",
+    "requirements": [
+      "P02.03"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_required_capability",
+      "id": "capability-missing",
+      "params": {
+        "name": "test_required_capability",
+        "arguments": {}
+      }
+    },
+    "ignorePaths": [
+      "$body.error.message"
+    ],
+    "assert": {
+      "status": 400,
+      "errorCode": -32021,
+      "errorDataPath": {
+        "requiredCapabilities.sampling": {}
+      }
+    }
+  },
+  {
+    "id": "meta-required-capability-present",
+    "requirements": [
+      "P02.03"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_required_capability",
+      "id": "capability-present",
+      "clientCapabilities": {
+        "sampling": {}
+      },
+      "params": {
+        "name": "test_required_capability",
+        "arguments": {}
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "contentIncludes": "Sampling capability declared"
+    }
+  },
+  {
+    "id": "http-custom-header-unicode",
+    "requirements": [
+      "P07.05",
+      "P07.07"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_custom_header",
+      "id": "header-unicode",
+      "headers": {
+        "Mcp-Param-Conformance-Value": "=?base64?Q2FmZsOoIOKYlQ==?="
+      },
+      "params": {
+        "name": "test_custom_header",
+        "arguments": {
+          "value": "Caff\u00e8 \u2615"
+        }
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "contentIncludes": "Custom header accepted"
+    }
+  },
+  {
+    "id": "http-custom-header-padded",
+    "requirements": [
+      "P07.05",
+      "P07.07"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_custom_header",
+      "id": "header-padded",
+      "headers": {
+        "Mcp-Param-Conformance-Value": "=?base64?ICBwYWRkZWQgIA==?="
+      },
+      "params": {
+        "name": "test_custom_header",
+        "arguments": {
+          "value": "  padded  "
+        }
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "contentIncludes": "Custom header accepted"
+    }
+  },
+  {
+    "id": "http-custom-header-control",
+    "requirements": [
+      "P07.05",
+      "P07.07"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_custom_header",
+      "id": "header-control",
+      "headers": {
+        "Mcp-Param-Conformance-Value": "=?base64?bGluZQpicmVhaw==?="
+      },
+      "params": {
+        "name": "test_custom_header",
+        "arguments": {
+          "value": "line\nbreak"
+        }
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "contentIncludes": "Custom header accepted"
+    }
+  },
+  {
+    "id": "http-custom-header-sentinel",
+    "requirements": [
+      "P07.05",
+      "P07.07"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_custom_header",
+      "id": "header-sentinel",
+      "headers": {
+        "Mcp-Param-Conformance-Value": "=?base64?PT9iYXNlNjQ/bGl0ZXJhbD89?="
+      },
+      "params": {
+        "name": "test_custom_header",
+        "arguments": {
+          "value": "=?base64?literal?="
+        }
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "contentIncludes": "Custom header accepted"
+    }
+  },
+  {
+    "id": "http-custom-header-malformed-base64",
+    "requirements": [
+      "P07.05",
+      "P07.07"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_custom_header",
+      "id": "header-malformed",
+      "headers": {
+        "Mcp-Param-Conformance-Value": "=?base64?%%%?="
+      },
+      "params": {
+        "name": "test_custom_header",
+        "arguments": {
+          "value": "ignored"
+        }
+      }
+    },
+    "ignorePaths": [
+      "$body.error.message",
+      "$body.error.data"
+    ],
+    "assert": {
+      "status": 400,
+      "errorCode": -32020
+    }
+  },
+  {
+    "id": "http-custom-header-missing",
+    "requirements": [
+      "P07.07"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_custom_header",
+      "id": "header-missing",
+      "params": {
+        "name": "test_custom_header",
+        "arguments": {
+          "value": "required"
+        }
+      }
+    },
+    "ignorePaths": [
+      "$body.error.message",
+      "$body.error.data"
+    ],
+    "assert": {
+      "status": 400,
+      "errorCode": -32020
+    }
+  },
+  {
+    "id": "limits-json-depth",
+    "requirements": [
+      "P09.04"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.echo",
+      "id": "deep",
+      "bodyDepth": 70,
+      "params": {
+        "name": "fixture.echo",
+        "arguments": {
+          "text": "never-run"
+        }
+      }
+    },
+    "stateTokens": [
+      "alice-read"
+    ],
+    "skipDifferential": true,
+    "assert": {
+      "status": 400,
+      "errorCode": -32700,
+      "stateCounts": {
+        "alice-read": {
+          "echo": 0
+        }
+      }
+    },
+    "referenceOmitAssertions": [
+      "errorCode"
+    ],
+    "referenceAssert": {
+      "status": 200,
+      "resultType": "complete",
+      "isError": true
+    }
+  },
+  {
+    "id": "state-repeated-call-executes-separately",
+    "requirements": [
+      "P05.05",
+      "P12.03"
+    ],
+    "before": [
+      {
+        "token": "alice-write",
+        "request": {
+          "mcpMethod": "tools/call",
+          "mcpName": "fixture.item.create",
+          "id": "same-request-id",
+          "params": {
+            "name": "fixture.item.create",
+            "arguments": {
+              "id": "repeat-one",
+              "value": "one"
+            }
+          }
+        }
+      }
+    ],
+    "token": "alice-write",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.item.create",
+      "id": "same-request-id",
+      "params": {
+        "name": "fixture.item.create",
+        "arguments": {
+          "id": "repeat-two",
+          "value": "two"
+        }
+      }
+    },
+    "stateTokens": [
+      "alice-read"
+    ],
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "structuredPath": {
+        "id": "repeat-two"
+      },
+      "stateCounts": {
+        "alice-read": {
+          "create": 2
+        }
+      },
+      "stateItemValues": {
+        "alice-read": {
+          "repeat-one": "one",
+          "repeat-two": "two"
+        }
+      }
+    }
+  },
+  {
+    "id": "deadline-timeout-after-commit",
+    "requirements": [
+      "P05.05",
+      "P12.01",
+      "P12.03"
+    ],
+    "profile": "deadline",
+    "token": "alice-write",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.item.createSlow",
+      "id": "timeout-after-commit",
+      "params": {
+        "name": "fixture.item.createSlow",
+        "arguments": {
+          "id": "committed-before-timeout",
+          "value": "durable",
+          "delayMs": 250
+        }
+      }
+    },
+    "stateTokens": [
+      "alice-read"
+    ],
+    "skipDifferential": true,
+    "assert": {
+      "status": 408,
+      "errorCode": -32000,
+      "stateCounts": {
+        "alice-read": {
+          "create": 1
+        }
+      },
+      "stateItemValues": {
+        "alice-read": {
+          "committed-before-timeout": "durable"
+        }
+      }
+    },
+    "referenceOmitAssertions": [
+      "errorCode"
+    ],
+    "referenceAssert": {
+      "status": 200,
+      "resultType": "complete",
+      "structuredPath": {
+        "id": "committed-before-timeout"
+      }
+    }
+  },
+  {
+    "id": "wire-empty-body",
+    "requirements": [
+      "P01.02",
+      "P01.03"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/list",
+      "bodyRaw": ""
+    },
+    "ignorePaths": [
+      "$body.error.message",
+      "$body.id"
+    ],
+    "assert": {
+      "status": 400,
+      "errorCode": -32700,
+      "idPresence": "absent"
+    },
+    "referenceAssert": {
+      "idPresence": "null"
+    }
+  },
+  {
+    "id": "wire-whitespace-body",
+    "requirements": [
+      "P01.02",
+      "P01.03"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/list",
+      "bodyRaw": " \n\t"
+    },
+    "ignorePaths": [
+      "$body.error.message",
+      "$body.id"
+    ],
+    "assert": {
+      "status": 400,
+      "errorCode": -32700,
+      "idPresence": "absent"
+    },
+    "referenceAssert": {
+      "idPresence": "null"
+    }
+  },
+  {
+    "id": "wire-id-decimal-integer",
+    "requirements": [
+      "P01.01",
+      "P01.02"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/list",
+      "bodyRaw": "{\"jsonrpc\":\"2.0\",\"id\":1.0,\"method\":\"tools/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientCapabilities\":{}}}}"
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "idValue": 1
+    }
+  },
+  {
+    "id": "wire-id-exponent-integer",
+    "requirements": [
+      "P01.01",
+      "P01.02"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/list",
+      "bodyRaw": "{\"jsonrpc\":\"2.0\",\"id\":1e0,\"method\":\"tools/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientCapabilities\":{}}}}"
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "idValue": 1
+    }
+  },
+  {
+    "id": "wire-id-fraction-rejected",
+    "requirements": [
+      "P01.01",
+      "P01.02",
+      "P01.03"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/list",
+      "bodyRaw": "{\"jsonrpc\":\"2.0\",\"id\":1.5,\"method\":\"tools/list\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientCapabilities\":{}}}}"
+    },
+    "ignorePaths": [
+      "$body.error.message",
+      "$body.id"
+    ],
+    "assert": {
+      "status": 400,
+      "errorCode": -32600,
+      "idPresence": "absent"
+    },
+    "referenceOmitAssertions": [
+      "idPresence"
+    ],
+    "referenceAssert": {
+      "idValue": 1.5
+    }
+  },
+  {
+    "id": "http-name-header-missing",
+    "requirements": [
+      "P07.04"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/call",
+      "id": "name-missing",
+      "params": {
+        "name": "fixture.echo",
+        "arguments": {
+          "text": "never-run"
+        }
+      }
+    },
+    "ignorePaths": [
+      "$body.error.message",
+      "$body.error.data"
+    ],
+    "assert": {
+      "status": 400,
+      "errorCode": -32020
+    }
+  },
+  {
+    "id": "http-name-header-malformed",
+    "requirements": [
+      "P07.04",
+      "P07.05"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "=?base64?%%%?=",
+      "id": "name-malformed",
+      "params": {
+        "name": "fixture.echo",
+        "arguments": {
+          "text": "never-run"
+        }
+      }
+    },
+    "ignorePaths": [
+      "$body.error.message",
+      "$body.error.data"
+    ],
+    "assert": {
+      "status": 400,
+      "errorCode": -32020
+    }
+  },
+  {
+    "id": "http-name-header-required-before-malformed-body",
+    "requirements": [
+      "P07.04"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/call",
+      "id": "name-required-first",
+      "params": {
+        "name": 42,
+        "arguments": {}
+      }
+    },
+    "skipDifferential": true,
+    "assert": {
+      "status": 400,
+      "errorCode": -32020
+    },
+    "referenceAssert": {
+      "status": 200,
+      "errorCode": -32602
+    }
+  },
+  {
+    "id": "identity-api-token-rejected-at-mcp",
+    "requirements": [
+      "P10.02",
+      "P10.05"
+    ],
+    "token": "api-alice-read",
+    "request": {
+      "mcpMethod": "tools/list",
+      "id": "wrong-audience",
+      "params": {}
+    },
+    "assert": {
+      "status": 401,
+      "errorCode": -32001
+    }
+  },
+  {
+    "id": "wire-id-string-echo",
+    "requirements": [
+      "P01.01",
+      "P01.02"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/list",
+      "id": "exact-string-id",
+      "params": {}
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "idValue": "exact-string-id"
+    }
+  },
+  {
+    "id": "wire-id-integer-echo",
+    "requirements": [
+      "P01.01",
+      "P01.02"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/list",
+      "id": 42,
+      "params": {}
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "idValue": 42
+    }
+  },
+  {
+    "id": "wire-notification-rejected-no-execution",
+    "requirements": [
+      "P01.05",
+      "P01.06"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.echo",
+      "body": {
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+          "name": "fixture.echo",
+          "arguments": {
+            "text": "must-not-run"
+          },
+          "_meta": {
+            "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+            "io.modelcontextprotocol/clientCapabilities": {}
+          }
+        }
+      }
+    },
+    "stateTokens": [
+      "alice-read"
+    ],
+    "skipDifferential": true,
+    "assert": {
+      "status": 404,
+      "errorCode": -32601,
+      "bodyPresence": "object",
+      "idPresence": "absent",
+      "stateCounts": {
+        "alice-read": {
+          "echo": 0
+        }
+      }
+    },
+    "referenceOmitAssertions": [
+      "errorCode"
+    ],
+    "referenceAssert": {
+      "status": 202,
+      "bodyPresence": "null"
+    }
+  },
+  {
+    "id": "call-arguments-omitted-valid",
+    "requirements": [
+      "P05.01"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_simple_text",
+      "id": "args-omitted",
+      "params": {
+        "name": "test_simple_text"
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "contentIncludes": "simple text response"
+    }
+  },
+  {
+    "id": "call-arguments-null-rejected",
+    "requirements": [
+      "P05.01",
+      "P06.03"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.echo",
+      "id": "args-null",
+      "params": {
+        "name": "fixture.echo",
+        "arguments": null
+      }
+    },
+    "ignorePaths": [
+      "$body.error.message",
+      "$body.error.data"
+    ],
+    "assert": {
+      "status": 200,
+      "errorCode": -32602,
+      "idValue": "args-null"
+    }
+  },
+  {
+    "id": "call-arguments-array-rejected",
+    "requirements": [
+      "P05.01",
+      "P06.03"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.echo",
+      "id": "args-array",
+      "params": {
+        "name": "fixture.echo",
+        "arguments": []
+      }
+    },
+    "ignorePaths": [
+      "$body.error.message",
+      "$body.error.data"
+    ],
+    "assert": {
+      "status": 200,
+      "errorCode": -32602,
+      "idValue": "args-array"
+    }
+  },
+  {
+    "id": "catalog-unpaginated",
+    "requirements": [
+      "P04.05"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/list",
+      "id": "catalog-unpaginated",
+      "params": {}
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "resultAbsentPaths": [
+        "nextCursor"
+      ]
+    }
+  },
+  {
+    "id": "http-json-response-content-type",
+    "requirements": [
+      "P07.01"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/list",
+      "id": "json-content-type",
+      "params": {}
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "headerValues": {
+        "content-type": "application/json"
+      }
+    }
+  },
+  {
+    "id": "method-initialize-unadvertised",
+    "requirements": [
+      "P07.08",
+      "P11.03"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "initialize",
+      "id": "initialize-unadvertised",
+      "params": {}
+    },
+    "assert": {
+      "status": 404,
+      "errorCode": -32601,
+      "idValue": "initialize-unadvertised"
+    }
+  },
+  {
+    "id": "method-ping-unadvertised",
+    "requirements": [
+      "P07.08",
+      "P11.03"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "ping",
+      "id": "ping-unadvertised",
+      "params": {}
+    },
+    "assert": {
+      "status": 404,
+      "errorCode": -32601,
+      "idValue": "ping-unadvertised"
+    }
+  },
+  {
+    "id": "method-resources-unadvertised",
+    "requirements": [
+      "P07.08",
+      "P11.03"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "resources/list",
+      "id": "resources-unadvertised",
+      "params": {}
+    },
+    "assert": {
+      "status": 404,
+      "errorCode": -32601,
+      "idValue": "resources-unadvertised"
+    }
+  },
+  {
+    "id": "identity-query-token-rejected",
+    "requirements": [
+      "P10.02"
+    ],
+    "request": {
+      "mcpMethod": "tools/list",
+      "query": {
+        "access_token": "alice-read"
+      },
+      "id": "query-token",
+      "params": {}
+    },
+    "skipDifferential": true,
+    "assert": {
+      "status": 401,
+      "errorCode": -32001
+    },
+    "referenceOmitAssertions": [
+      "errorCode"
+    ],
+    "referenceAssert": {
+      "status": 404,
+      "bodyPresence": "null"
+    }
+  },
+  {
+    "id": "identity-private-catalog-token-change",
+    "requirements": [
+      "P10.03",
+      "P10.04"
+    ],
+    "before": [
+      {
+        "token": "alice-read",
+        "request": {
+          "mcpMethod": "tools/list",
+          "id": "catalog-read-first",
+          "params": {}
+        }
+      }
+    ],
+    "token": "alice-write",
+    "request": {
+      "mcpMethod": "tools/list",
+      "id": "catalog-write-second",
+      "params": {}
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "cacheScope": "private",
+      "ttlMs": 0,
+      "toolNames": [
+        "fixture.echo",
+        "fixture.error",
+        "fixture.item.create",
+        "fixture.item.createSlow",
+        "fixture.item.read",
+        "fixture.slow"
+      ],
+      "headerValues": {
+        "cache-control": "private, no-store"
+      }
+    }
+  },
+  {
+    "id": "limits-host-rate-limit",
+    "requirements": [
+      "P09.03",
+      "P09.04"
+    ],
+    "token": "alice-rate-limited",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.echo",
+      "id": "rate-limited",
+      "params": {
+        "name": "fixture.echo",
+        "arguments": {
+          "text": "must-not-run"
+        }
+      }
+    },
+    "stateTokens": [
+      "alice-read"
+    ],
+    "assert": {
+      "status": 429,
+      "errorCode": -32000,
+      "errorDataPath": {
+        "retryAfterSeconds": 5
+      },
+      "headerValues": {
+        "retry-after": "5"
+      },
+      "stateCounts": {
+        "alice-read": {
+          "echo": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "wire-response-direction-rejected",
+    "requirements": [
+      "P01.04"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/list",
+      "body": {
+        "jsonrpc": "2.0",
+        "id": "wrong-way-response",
+        "result": {}
+      }
+    },
+    "ignorePaths": [
+      "$body.error.message",
+      "$body.id"
+    ],
+    "assert": {
+      "status": 400,
+      "errorCode": -32600,
+      "idValue": "wrong-way-response"
+    },
+    "referenceAssert": {
+      "idPresence": "null",
+      "idValue": null
+    }
+  },
+  {
+    "id": "call-name-missing-rejected",
+    "requirements": [
+      "P05.01",
+      "P07.04"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.echo",
+      "id": "call-name-missing",
+      "params": {
+        "arguments": {
+          "text": "must-not-run"
+        }
+      }
+    },
+    "skipDifferential": true,
+    "ignorePaths": [
+      "$body.error.message",
+      "$body.error.data"
+    ],
+    "assert": {
+      "status": 400,
+      "errorCode": -32020,
+      "idValue": "call-name-missing"
+    },
+    "referenceAssert": {
+      "status": 200,
+      "errorCode": -32602
+    }
+  },
+  {
+    "id": "schema-bounded-pattern-valid",
+    "requirements": [
+      "P09.02"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_bounded_pattern",
+      "id": "bounded-pattern-valid",
+      "params": {
+        "name": "test_bounded_pattern",
+        "arguments": {
+          "value": "aaaa"
+        }
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "contentIncludes": "Pattern accepted.",
+      "isErrorPresence": "absent"
+    }
+  },
+  {
+    "id": "schema-bounded-pattern-invalid",
+    "requirements": [
+      "P09.02"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_bounded_pattern",
+      "id": "bounded-pattern-invalid",
+      "params": {
+        "name": "test_bounded_pattern",
+        "arguments": {
+          "value": "aaaa!"
+        }
+      }
+    },
+    "ignorePaths": [
+      "$body.result.content.0.text"
+    ],
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "isError": true,
+      "contentExcludes": "Pattern accepted."
+    }
+  },
+  {
+    "id": "http-custom-header-empty",
+    "requirements": [
+      "P07.07"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_custom_header",
+      "id": "header-empty",
+      "headers": {
+        "Mcp-Param-Conformance-Value": ""
+      },
+      "params": {
+        "name": "test_custom_header",
+        "arguments": {
+          "value": ""
+        }
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "contentIncludes": "Custom header accepted"
+    }
+  },
+  {
+    "id": "wire-utf16le-bom-rejected",
+    "requirements": [
+      "P01.03"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.echo",
+      "bodyBase64": "//57ACIAagBzAG8AbgByAHAAYwAiADoAIgAyAC4AMAAiACwAIgBpAGQAIgA6ACIAZQBuAGMAbwBkAGkAbgBnACIALAAiAG0AZQB0AGgAbwBkACIAOgAiAHQAbwBvAGwAcwAvAGMAYQBsAGwAIgAsACIAcABhAHIAYQBtAHMAIgA6AHsAIgBuAGEAbQBlACIAOgAiAGYAaQB4AHQAdQByAGUALgBlAGMAaABvACIALAAiAGEAcgBnAHUAbQBlAG4AdABzACIAOgB7ACIAdABlAHgAdAAiADoAIgBtAHUAcwB0AC0AbgBvAHQALQByAHUAbgAiAH0ALAAiAF8AbQBlAHQAYQAiADoAewAiAGkAbwAuAG0AbwBkAGUAbABjAG8AbgB0AGUAeAB0AHAAcgBvAHQAbwBjAG8AbAAvAHAAcgBvAHQAbwBjAG8AbABWAGUAcgBzAGkAbwBuACIAOgAiADIAMAAyADYALQAwADcALQAyADgAIgAsACIAaQBvAC4AbQBvAGQAZQBsAGMAbwBuAHQAZQB4AHQAcAByAG8AdABvAGMAbwBsAC8AYwBsAGkAZQBuAHQAQwBhAHAAYQBiAGkAbABpAHQAaQBlAHMAIgA6AHsAfQB9AH0AfQA="
+    },
+    "stateTokens": [
+      "alice-read"
+    ],
+    "ignorePaths": [
+      "$body.error.message",
+      "$body.id"
+    ],
+    "assert": {
+      "status": 400,
+      "errorCode": -32700,
+      "idPresence": "absent",
+      "stateCounts": {
+        "alice-read": {
+          "echo": 0
+        }
+      }
+    },
+    "referenceAssert": {
+      "idPresence": "null"
+    }
+  },
+  {
+    "id": "wire-utf16be-bom-rejected",
+    "requirements": [
+      "P01.03"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.echo",
+      "bodyBase64": "/v8AewAiAGoAcwBvAG4AcgBwAGMAIgA6ACIAMgAuADAAIgAsACIAaQBkACIAOgAiAGUAbgBjAG8AZABpAG4AZwAiACwAIgBtAGUAdABoAG8AZAAiADoAIgB0AG8AbwBsAHMALwBjAGEAbABsACIALAAiAHAAYQByAGEAbQBzACIAOgB7ACIAbgBhAG0AZQAiADoAIgBmAGkAeAB0AHUAcgBlAC4AZQBjAGgAbwAiACwAIgBhAHIAZwB1AG0AZQBuAHQAcwAiADoAewAiAHQAZQB4AHQAIgA6ACIAbQB1AHMAdAAtAG4AbwB0AC0AcgB1AG4AIgB9ACwAIgBfAG0AZQB0AGEAIgA6AHsAIgBpAG8ALgBtAG8AZABlAGwAYwBvAG4AdABlAHgAdABwAHIAbwB0AG8AYwBvAGwALwBwAHIAbwB0AG8AYwBvAGwAVgBlAHIAcwBpAG8AbgAiADoAIgAyADAAMgA2AC0AMAA3AC0AMgA4ACIALAAiAGkAbwAuAG0AbwBkAGUAbABjAG8AbgB0AGUAeAB0AHAAcgBvAHQAbwBjAG8AbAAvAGMAbABpAGUAbgB0AEMAYQBwAGEAYgBpAGwAaQB0AGkAZQBzACIAOgB7AH0AfQB9AH0="
+    },
+    "stateTokens": [
+      "alice-read"
+    ],
+    "ignorePaths": [
+      "$body.error.message",
+      "$body.id"
+    ],
+    "assert": {
+      "status": 400,
+      "errorCode": -32700,
+      "idPresence": "absent",
+      "stateCounts": {
+        "alice-read": {
+          "echo": 0
+        }
+      }
+    },
+    "referenceAssert": {
+      "idPresence": "null"
+    }
+  },
+  {
+    "id": "wire-invalid-utf8-rejected",
+    "requirements": [
+      "P01.03"
+    ],
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.echo",
+      "bodyBase64": "eyJqc29ucnBjIjoiMi4wIiwiaWQiOiJlbmNvZGluZyIsIm1ldGhvZCI6InRvb2xzL2NhbGwiLCJwYXJhbXMiOnsibmFtZSI6ImZpeHR1cmUuZWNobyIsImFyZ3VtZW50cyI6eyJ0ZXh0IjoiYmFk/2J5dGUifSwiX21ldGEiOnsiaW8ubW9kZWxjb250ZXh0cHJvdG9jb2wvcHJvdG9jb2xWZXJzaW9uIjoiMjAyNi0wNy0yOCIsImlvLm1vZGVsY29udGV4dHByb3RvY29sL2NsaWVudENhcGFiaWxpdGllcyI6e319fX0="
+    },
+    "stateTokens": [
+      "alice-read"
+    ],
+    "skipDifferential": true,
+    "assert": {
+      "status": 400,
+      "errorCode": -32700,
+      "idPresence": "absent",
+      "stateCounts": {
+        "alice-read": {
+          "echo": 0
+        }
+      }
+    },
+    "referenceOmitAssertions": [
+      "errorCode",
+      "idPresence"
+    ],
+    "referenceAssert": {
+      "status": 200,
+      "resultType": "complete",
+      "structuredContent": {
+        "text": "bad\ufffdbyte"
+      },
+      "stateCounts": {
+        "alice-read": {
+          "echo": 1
+        }
+      }
+    }
+  },
+  {
+    "id": "method-resources-templates-list-unadvertised",
+    "requirements": [
+      "P07.08",
+      "P11.03"
+    ],
+    "request": {
+      "mcpMethod": "resources/templates/list",
+      "id": "method-resources-templates-list-unadvertised",
+      "params": {}
+    },
+    "token": "alice-read",
+    "assert": {
+      "status": 404,
+      "errorCode": -32601,
+      "idValue": "method-resources-templates-list-unadvertised"
+    }
+  },
+  {
+    "id": "method-resources-read-unadvertised",
+    "requirements": [
+      "P07.08",
+      "P11.03"
+    ],
+    "request": {
+      "mcpMethod": "resources/read",
+      "id": "method-resources-read-unadvertised",
+      "params": {
+        "uri": "test://missing-resource"
+      },
+      "mcpName": "test://missing-resource"
+    },
+    "token": "alice-read",
+    "assert": {
+      "status": 404,
+      "errorCode": -32601,
+      "idValue": "method-resources-read-unadvertised"
+    }
+  },
+  {
+    "id": "method-prompts-list-unadvertised",
+    "requirements": [
+      "P07.08",
+      "P11.03"
+    ],
+    "request": {
+      "mcpMethod": "prompts/list",
+      "id": "method-prompts-list-unadvertised",
+      "params": {}
+    },
+    "token": "alice-read",
+    "assert": {
+      "status": 404,
+      "errorCode": -32601,
+      "idValue": "method-prompts-list-unadvertised"
+    }
+  },
+  {
+    "id": "method-prompts-get-unadvertised",
+    "requirements": [
+      "P07.08",
+      "P11.03"
+    ],
+    "request": {
+      "mcpMethod": "prompts/get",
+      "id": "method-prompts-get-unadvertised",
+      "params": {
+        "name": "missing-prompt",
+        "arguments": {}
+      },
+      "mcpName": "missing-prompt"
+    },
+    "token": "alice-read",
+    "assert": {
+      "status": 404,
+      "errorCode": -32601,
+      "idValue": "method-prompts-get-unadvertised"
+    }
+  },
+  {
+    "id": "method-completion-complete-unadvertised",
+    "requirements": [
+      "P07.08",
+      "P11.03"
+    ],
+    "request": {
+      "mcpMethod": "completion/complete",
+      "id": "method-completion-complete-unadvertised",
+      "params": {
+        "ref": {
+          "type": "ref/prompt",
+          "name": "missing-prompt"
+        },
+        "argument": {
+          "name": "name",
+          "value": "a"
+        }
+      }
+    },
+    "token": "alice-read",
+    "assert": {
+      "status": 404,
+      "errorCode": -32601,
+      "idValue": "method-completion-complete-unadvertised"
+    }
+  },
+  {
+    "id": "method-logging-setLevel-unadvertised",
+    "requirements": [
+      "P07.08",
+      "P11.03"
+    ],
+    "request": {
+      "mcpMethod": "logging/setLevel",
+      "id": "method-logging-setLevel-unadvertised",
+      "params": {
+        "level": "info"
+      }
+    },
+    "token": "alice-read",
+    "assert": {
+      "status": 404,
+      "errorCode": -32601,
+      "idValue": "method-logging-setLevel-unadvertised"
+    }
+  },
+  {
+    "id": "method-resources-subscribe-unadvertised",
+    "requirements": [
+      "P07.08",
+      "P11.03"
+    ],
+    "request": {
+      "mcpMethod": "resources/subscribe",
+      "id": "method-resources-subscribe-unadvertised",
+      "params": {
+        "uri": "test://missing-resource"
+      }
+    },
+    "token": "alice-read",
+    "assert": {
+      "status": 404,
+      "errorCode": -32601,
+      "idValue": "method-resources-subscribe-unadvertised"
+    }
+  },
+  {
+    "id": "method-resources-unsubscribe-unadvertised",
+    "requirements": [
+      "P07.08",
+      "P11.03"
+    ],
+    "request": {
+      "mcpMethod": "resources/unsubscribe",
+      "id": "method-resources-unsubscribe-unadvertised",
+      "params": {
+        "uri": "test://missing-resource"
+      }
+    },
+    "token": "alice-read",
+    "assert": {
+      "status": 404,
+      "errorCode": -32601,
+      "idValue": "method-resources-unsubscribe-unadvertised"
+    }
+  },
+  {
+    "id": "subscription-empty-listen-cancel",
+    "requirements": [
+      "P17.03",
+      "P12.02"
+    ],
+    "profile": "conformance",
+    "token": "alice-read",
+    "request": {
+      "mcpMethod": "subscriptions/listen",
+      "id": "subscription-probe",
+      "params": {
+        "notifications": {}
+      },
+      "firstSseMessage": true
+    },
+    "assert": {
+      "status": 200,
+      "headerValues": {
+        "content-type": "text/event-stream"
+      },
+      "bodyPath": {
+        "method": "notifications/subscriptions/acknowledged",
+        "params.notifications": {}
+      }
+    }
+  },
+  {
+    "id": "wire-id-empty",
+    "requirements": [
+      "P01.01",
+      "P01.02"
+    ],
+    "request": {
+      "mcpMethod": "tools/list",
+      "id": "",
+      "params": {}
+    },
+    "token": "alice-read",
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "idValue": ""
+    }
+  },
+  {
+    "id": "wire-id-zero",
+    "requirements": [
+      "P01.01",
+      "P01.02"
+    ],
+    "request": {
+      "mcpMethod": "tools/list",
+      "id": 0,
+      "params": {}
+    },
+    "token": "alice-read",
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "idValue": 0
+    }
+  },
+  {
+    "id": "wire-id-negative",
+    "requirements": [
+      "P01.01",
+      "P01.02"
+    ],
+    "request": {
+      "mcpMethod": "tools/list",
+      "id": -1,
+      "params": {}
+    },
+    "token": "alice-read",
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "idValue": -1
+    }
+  },
+  {
+    "id": "wire-id-max-safe",
+    "requirements": [
+      "P01.01",
+      "P01.02"
+    ],
+    "request": {
+      "mcpMethod": "tools/list",
+      "id": 9007199254740991,
+      "params": {}
+    },
+    "token": "alice-read",
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "idValue": 9007199254740991
+    }
+  },
+  {
+    "id": "wire-id-min-safe",
+    "requirements": [
+      "P01.01",
+      "P01.02"
+    ],
+    "request": {
+      "mcpMethod": "tools/list",
+      "id": -9007199254740991,
+      "params": {}
+    },
+    "token": "alice-read",
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "idValue": -9007199254740991
+    }
+  },
+  {
+    "id": "meta-client-info-self-reported",
+    "requirements": [
+      "P02.02",
+      "P10.03"
+    ],
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.item.read",
+      "id": "self-reported-info",
+      "clientInfo": {
+        "name": "pretend-tenant-blue",
+        "version": "1.0",
+        "title": "bob"
+      },
+      "clientCapabilities": {
+        "experimental": {
+          "example.com/arbitrary": {}
+        }
+      },
+      "params": {
+        "name": "fixture.item.read",
+        "arguments": {
+          "id": "seed"
+        }
+      }
+    },
+    "token": "alice-read",
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "structuredPath": {
+        "tenantId": "red",
+        "value": "seeded"
+      }
+    }
+  },
+  {
+    "id": "meta-capability-not-sticky",
+    "requirements": [
+      "P02.03",
+      "P08.01"
+    ],
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_required_capability",
+      "id": "capability-second",
+      "clientCapabilities": {},
+      "params": {
+        "name": "test_required_capability",
+        "arguments": {}
+      }
+    },
+    "profile": "conformance",
+    "before": [
+      {
+        "request": {
+          "mcpMethod": "tools/call",
+          "mcpName": "test_required_capability",
+          "id": "capability-first",
+          "clientCapabilities": {
+            "sampling": {}
+          },
+          "params": {
+            "name": "test_required_capability",
+            "arguments": {}
+          }
+        }
+      }
+    ],
+    "ignorePaths": [
+      "$body.error.message"
+    ],
+    "assert": {
+      "status": 400,
+      "errorCode": -32021,
+      "errorDataPath": {
+        "requiredCapabilities": {
+          "sampling": {}
+        }
+      }
+    }
+  },
+  {
+    "id": "call-echo-empty",
+    "requirements": [
+      "P05.03"
+    ],
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "fixture.echo",
+      "id": "echo-empty",
+      "params": {
+        "name": "fixture.echo",
+        "arguments": {
+          "text": ""
+        }
+      }
+    },
+    "token": "alice-read",
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "structuredContent": {
+        "text": ""
+      }
+    }
+  },
+  {
+    "id": "call-structured-null",
+    "requirements": [
+      "P05.03",
+      "P06.04"
+    ],
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_structured_content",
+      "id": "structured-null",
+      "params": {
+        "name": "test_structured_content",
+        "arguments": {
+          "value": null
+        }
+      }
+    },
+    "profile": "conformance",
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "structuredContent": null,
+      "isErrorPresence": "absent"
+    }
+  },
+  {
+    "id": "call-structured-array",
+    "requirements": [
+      "P05.03",
+      "P06.04"
+    ],
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_structured_content",
+      "id": "structured-array",
+      "params": {
+        "name": "test_structured_content",
+        "arguments": {
+          "value": [
+            1,
+            "citt\u00e0",
+            null
+          ]
+        }
+      }
+    },
+    "profile": "conformance",
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "structuredContent": [
+        1,
+        "citt\u00e0",
+        null
+      ],
+      "isErrorPresence": "absent"
+    }
+  },
+  {
+    "id": "call-structured-boolean",
+    "requirements": [
+      "P05.03",
+      "P06.04"
+    ],
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_structured_content",
+      "id": "structured-boolean",
+      "params": {
+        "name": "test_structured_content",
+        "arguments": {
+          "value": false
+        }
+      }
+    },
+    "profile": "conformance",
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "structuredContent": false,
+      "isErrorPresence": "absent"
+    }
+  },
+  {
+    "id": "call-structured-number",
+    "requirements": [
+      "P05.03",
+      "P06.04"
+    ],
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_structured_content",
+      "id": "structured-number",
+      "params": {
+        "name": "test_structured_content",
+        "arguments": {
+          "value": 0
+        }
+      }
+    },
+    "profile": "conformance",
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "structuredContent": 0,
+      "isErrorPresence": "absent"
+    }
+  },
+  {
+    "id": "call-structured-string",
+    "requirements": [
+      "P05.03",
+      "P06.04"
+    ],
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_structured_content",
+      "id": "structured-string",
+      "params": {
+        "name": "test_structured_content",
+        "arguments": {
+          "value": "citt\u00e0"
+        }
+      }
+    },
+    "profile": "conformance",
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "structuredContent": "citt\u00e0",
+      "isErrorPresence": "absent"
+    }
+  },
+  {
+    "id": "call-structured-object",
+    "requirements": [
+      "P05.03",
+      "P06.04"
+    ],
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_structured_content",
+      "id": "structured-object",
+      "params": {
+        "name": "test_structured_content",
+        "arguments": {
+          "value": {
+            "nested": [
+              1,
+              null
+            ]
+          }
+        }
+      }
+    },
+    "profile": "conformance",
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "structuredContent": {
+        "nested": [
+          1,
+          null
+        ]
+      },
+      "isErrorPresence": "absent"
+    }
+  },
+  {
+    "id": "call-content-embedded-binary",
+    "requirements": [
+      "P05.04"
+    ],
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_embedded_binary",
+      "id": "embedded-binary",
+      "params": {
+        "name": "test_embedded_binary",
+        "arguments": {}
+      }
+    },
+    "profile": "conformance",
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "contentTypes": [
+        "resource"
+      ],
+      "contentIncludes": "aGVsbG8="
+    }
+  }
+]

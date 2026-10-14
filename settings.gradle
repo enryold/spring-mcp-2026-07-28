@@ -1,0 +1,8 @@
+rootProject.name = 'spring-mcp-2026-07-28'
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories { mavenCentral() }
+}
+include 'mcp-2026-core', 'mcp-2026-spring-boot', 'mcp-2026-spring-boot-starter'
+include 'api-server'
+project(':api-server').projectDir = file('samples/api-server')

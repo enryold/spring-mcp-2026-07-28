@@ -1,0 +1,63 @@
+{
+  "serverInfo": { "name": "spring-mcp-sample", "version": "0.1.0" },
+  "protocolVersion": "2026-07-28",
+  "identities": {
+    "alice-read": { "subject": "alice", "tenantId": "red", "scopes": ["read"] },
+    "alice-write": { "subject": "alice", "tenantId": "red", "scopes": ["read", "write"] },
+    "bob-write": { "subject": "bob", "tenantId": "blue", "scopes": ["read", "write"] },
+    "alice-rate-limited": { "subject": "rate-limited", "tenantId": "red", "scopes": ["read"] }
+  },
+  "fixtureApiCredentials": {
+    "alice-read": "api-alice-read",
+    "alice-write": "api-alice-write",
+    "bob-write": "api-bob-write"
+  },
+  "visibility": {
+    "read": ["fixture.echo", "fixture.error", "fixture.item.read", "fixture.slow"],
+    "write": ["fixture.item.create", "fixture.item.createSlow"]
+  },
+  "tools": [
+    {
+      "name": "fixture.echo",
+      "description": "Echo UTF-8 text through the Spring fixture",
+      "inputSchema": { "$schema": "https://json-schema.org/draft/2020-12/schema", "type": "object", "properties": { "text": { "type": "string" } }, "required": ["text"], "additionalProperties": false },
+      "outputSchema": { "$schema": "https://json-schema.org/draft/2020-12/schema", "type": "object", "properties": { "text": { "type": "string" } }, "required": ["text"], "additionalProperties": false },
+      "annotations": { "readOnlyHint": true, "idempotentHint": true }
+    },
+    {
+      "name": "fixture.error",
+      "description": "Return deterministic expected or sanitized unexpected fixture failures",
+      "inputSchema": { "$schema": "https://json-schema.org/draft/2020-12/schema", "type": "object", "properties": { "kind": { "type": "string", "enum": ["expected", "unexpected"] } }, "required": ["kind"], "additionalProperties": false },
+      "outputSchema": { "$schema": "https://json-schema.org/draft/2020-12/schema", "type": "object", "properties": { "kind": { "type": "string" }, "message": { "type": "string" } }, "required": ["kind", "message"], "additionalProperties": false },
+      "annotations": { "readOnlyHint": true, "idempotentHint": true }
+    },
+    {
+      "name": "fixture.item.create",
+      "description": "Create one item in the authenticated tenant",
+      "inputSchema": { "$schema": "https://json-schema.org/draft/2020-12/schema", "type": "object", "properties": { "id": { "type": "string", "minLength": 1 }, "value": { "type": "string" } }, "required": ["id", "value"], "additionalProperties": false },
+      "outputSchema": { "$schema": "https://json-schema.org/draft/2020-12/schema", "type": "object", "properties": { "id": { "type": "string" }, "tenantId": { "type": "string" }, "value": { "type": "string" }, "createdAt": { "type": "string" } }, "required": ["id", "tenantId", "value", "createdAt"], "additionalProperties": false },
+      "annotations": { "destructiveHint": false, "idempotentHint": false }
+    },
+    {
+      "name": "fixture.item.createSlow",
+      "description": "Commit one item, then delay the authenticated response",
+      "inputSchema": { "$schema": "https://json-schema.org/draft/2020-12/schema", "type": "object", "properties": { "id": { "type": "string", "minLength": 1 }, "value": { "type": "string" }, "delayMs": { "type": "integer", "minimum": 0, "maximum": 2000 } }, "required": ["id", "value", "delayMs"], "additionalProperties": false },
+      "outputSchema": { "$schema": "https://json-schema.org/draft/2020-12/schema", "type": "object", "properties": { "id": { "type": "string" }, "tenantId": { "type": "string" }, "value": { "type": "string" }, "createdAt": { "type": "string" } }, "required": ["id", "tenantId", "value", "createdAt"], "additionalProperties": false },
+      "annotations": { "destructiveHint": false, "idempotentHint": false }
+    },
+    {
+      "name": "fixture.item.read",
+      "description": "Read one item from the authenticated tenant",
+      "inputSchema": { "$schema": "https://json-schema.org/draft/2020-12/schema", "type": "object", "properties": { "id": { "type": "string", "minLength": 1 } }, "required": ["id"], "additionalProperties": false },
+      "outputSchema": { "$schema": "https://json-schema.org/draft/2020-12/schema", "type": "object", "properties": { "id": { "type": "string" }, "tenantId": { "type": "string" }, "value": { "type": "string" }, "createdAt": { "type": "string" } }, "required": ["id", "tenantId", "value", "createdAt"], "additionalProperties": false },
+      "annotations": { "readOnlyHint": true, "idempotentHint": true }
+    },
+    {
+      "name": "fixture.slow",
+      "description": "Delay a deterministic fixture response",
+      "inputSchema": { "$schema": "https://json-schema.org/draft/2020-12/schema", "type": "object", "properties": { "delayMs": { "type": "integer", "minimum": 0, "maximum": 2000 } }, "required": ["delayMs"], "additionalProperties": false },
+      "outputSchema": { "$schema": "https://json-schema.org/draft/2020-12/schema", "type": "object", "properties": { "delayMs": { "type": "integer", "minimum": -9007199254740991, "maximum": 9007199254740991 } }, "required": ["delayMs"], "additionalProperties": false },
+      "annotations": { "readOnlyHint": true, "idempotentHint": true }
+    }
+  ]
+}

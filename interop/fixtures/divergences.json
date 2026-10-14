@@ -1,0 +1,346 @@
+[
+  {
+    "case": "http-accept-incomplete",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/transports/streamable-http.mdx:76-77",
+    "referenceObservation": "SDK 2.3.1 accepts the implicit Accept: */* and returns 200 JSON.",
+    "javaDecision": "Reject with 406 because the 2026 client request does not list both application/json and text/event-stream.",
+    "test": "interop/fixtures/wire-cases.json#http-accept-incomplete",
+    "removalCondition": "Remove when the pinned reference validates the dual media-type requirement or the normative text changes."
+  },
+  {
+    "case": "http-accept-wrong",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/transports/streamable-http.mdx:76-77",
+    "referenceObservation": "SDK 2.3.1 accepts Accept: text/plain and returns 200 JSON.",
+    "javaDecision": "Reject with 406 because the client does not advertise either permitted response media type.",
+    "test": "interop/fixtures/wire-cases.json#http-accept-wrong",
+    "removalCondition": "Remove when the pinned reference validates response content negotiation or the normative text changes."
+  },
+  {
+    "case": "schema-missing-input",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/server/tools.mdx:740-779",
+    "referenceObservation": "SDK 2.3.1 embeds Zod-specific validation prose in the isError content block.",
+    "javaDecision": "Compare HTTP status, resultType, isError and content shape; allow only content[0].text to differ.",
+    "test": "interop/fixtures/wire-cases.json#schema-missing-input",
+    "removalCondition": "Remove if both implementations use the same validator diagnostics contract."
+  },
+  {
+    "case": "schema-extra-input",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/server/tools.mdx:740-779",
+    "referenceObservation": "SDK 2.3.1 embeds Zod-specific validation prose in the isError content block.",
+    "javaDecision": "Compare HTTP status, resultType, isError and content shape; allow only content[0].text to differ.",
+    "test": "interop/fixtures/wire-cases.json#schema-extra-input",
+    "removalCondition": "Remove if both implementations use the same validator diagnostics contract."
+  },
+  {
+    "case": "wire-malformed-json",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/index.mdx:84-108",
+    "referenceObservation": "SDK 2.3.1 returns implementation prose and id:null when no request ID can be read.",
+    "javaDecision": "Assert 400/-32700 and omit id under the MCP RequestId schema; ignore only message and id in the differential.",
+    "test": "interop/fixtures/wire-cases.json#wire-malformed-json",
+    "removalCondition": "Remove when the reference omits the non-RequestId null or the schema permits null."
+  },
+  {
+    "case": "wire-batch-rejected",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/transports/streamable-http.mdx:80-87",
+    "referenceObservation": "SDK 2.3.1 returns implementation prose and id:null for the rejected batch.",
+    "javaDecision": "Assert 400/-32600 and omit id because no single request ID exists; ignore only message and id.",
+    "test": "interop/fixtures/wire-cases.json#wire-batch-rejected",
+    "removalCondition": "Remove when the reference omits the non-RequestId null."
+  },
+  {
+    "case": "wire-boolean-id-rejected",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/index.mdx:39-48",
+    "referenceObservation": "SDK 2.3.1 returns implementation prose and id:null for a non-string/non-number ID.",
+    "javaDecision": "Assert 400/-32600 and omit the invalid ID; ignore only message and id.",
+    "test": "interop/fixtures/wire-cases.json#wire-boolean-id-rejected",
+    "removalCondition": "Remove when the reference omits the non-RequestId null."
+  },
+  {
+    "case": "wire-missing-method",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/index.mdx:31-48",
+    "referenceObservation": "SDK 2.3.1 returns implementation prose and id:null for a malformed request envelope.",
+    "javaDecision": "Assert 400/-32600 and preserve the readable numeric ID; ignore only message and the reference's non-RequestId null.",
+    "test": "interop/fixtures/wire-cases.json#wire-missing-method",
+    "removalCondition": "Remove when the reference omits the non-RequestId null."
+  },
+  {
+    "case": "meta-header-body-conflict",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/transports/streamable-http.mdx:246-260",
+    "referenceObservation": "SDK 2.3.1 adds implementation-specific mismatch data and detailed prose.",
+    "javaDecision": "Assert 400/-32020 with the preserved request ID; data is optional, so ignore only message and data.",
+    "test": "interop/fixtures/wire-cases.json#meta-header-body-conflict",
+    "removalCondition": "Remove if mismatch data becomes required or both implementations adopt one public detail schema."
+  },
+  {
+    "case": "meta-envelope-missing",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/index.mdx:381-383",
+    "referenceObservation": "The SDK adds optional envelope detail data and validator-specific prose.",
+    "javaDecision": "Assert 400/-32602 and preserved ID; ignore only optional error.data and error.message.",
+    "test": "interop/fixtures/wire-cases.json#meta-envelope-missing",
+    "removalCondition": "Remove if the specification fixes exact error prose."
+  },
+  {
+    "case": "meta-method-header-conflict",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/transports/streamable-http.mdx:246-260",
+    "referenceObservation": "The SDK adds optional mismatch data and implementation-specific HeaderMismatch prose.",
+    "javaDecision": "Assert 400/-32020 and preserved ID; ignore only optional error.data and error.message.",
+    "test": "interop/fixtures/wire-cases.json#meta-method-header-conflict",
+    "removalCondition": "Remove if the specification fixes exact error prose."
+  },
+  {
+    "case": "meta-name-header-conflict",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/transports/streamable-http.mdx:246-260",
+    "referenceObservation": "The SDK adds optional mismatch data and implementation-specific HeaderMismatch prose.",
+    "javaDecision": "Assert 400/-32020 and preserved ID; ignore only optional error.data and error.message.",
+    "test": "interop/fixtures/wire-cases.json#meta-name-header-conflict",
+    "removalCondition": "Remove if the specification fixes exact error prose."
+  },
+  {
+    "case": "http-wrong-content-type",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/transports/streamable-http.mdx:72-90",
+    "referenceObservation": "SDK 2.3.1 returns implementation prose and id:null before parsing a request.",
+    "javaDecision": "Assert 415/-32000 and omit id; ignore only message and id.",
+    "test": "interop/fixtures/wire-cases.json#http-wrong-content-type",
+    "removalCondition": "Remove when the reference omits the non-RequestId null or exact prose is standardized."
+  },
+  {
+    "case": "http-get-rejected",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/transports/streamable-http.mdx:72-90",
+    "referenceObservation": "SDK 2.3.1 returns punctuation-specific prose and id:null without a request body.",
+    "javaDecision": "Assert 405/-32000 and omit id; ignore only message and id.",
+    "test": "interop/fixtures/wire-cases.json#http-get-rejected",
+    "removalCondition": "Remove when the reference omits the non-RequestId null or exact prose is standardized."
+  },
+  {
+    "case": "security-origin-rejected",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/transports/streamable-http.mdx:60-63",
+    "referenceObservation": "SDK 2.3.1 returns host-specific prose and id:null before parsing the body.",
+    "javaDecision": "Assert 403/-32000, private no-store, and omitted id; ignore only message and id.",
+    "test": "interop/fixtures/wire-cases.json#security-origin-rejected",
+    "removalCondition": "Remove when the reference omits the non-RequestId null or exact prose is standardized."
+  },
+  {
+    "case": "limits-body-size",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/transports/streamable-http.mdx:72-90",
+    "referenceObservation": "The Node adapter returns configured-limit prose and id:null before parsing an oversized body.",
+    "javaDecision": "Assert 413/-32000 and omitted id; ignore only message and id.",
+    "test": "interop/fixtures/wire-cases.json#limits-body-size",
+    "removalCondition": "Remove when the reference omits the non-RequestId null or exact prose is standardized."
+  },
+  {
+    "case": "wire-id-null",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/index.mdx:27-49",
+    "referenceObservation": "SDK 2.3.1 represents the rejected null request id as id:null in its error envelope.",
+    "javaDecision": "Reject with -32600 and omit null because RequestId permits only strings and integers; ignore only message and id.",
+    "test": "interop/fixtures/wire-cases.json#wire-id-null",
+    "removalCondition": "Remove when the reference omits the non-RequestId null or the RequestId schema changes."
+  },
+  {
+    "case": "schema-nested-composed-invalid",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/server/tools.mdx:740-779",
+    "referenceObservation": "The pinned reference fixture and Java JSON Schema validator emit different non-normative validation prose for the same failed composed schema.",
+    "javaDecision": "Assert complete isError true and ignore only content[0].text.",
+    "test": "interop/fixtures/wire-cases.json#schema-nested-composed-invalid",
+    "removalCondition": "Remove if validator diagnostic prose becomes interoperable protocol data."
+  },
+  {
+    "case": "schema-output-violation",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/server/tools.mdx:810-819",
+    "referenceObservation": "SDK 2.3.1 maps invalid structured output to a complete isError result with validator-specific prose.",
+    "javaDecision": "Return a complete isError result without the invalid structuredContent or raw private value; ignore only content[0].text.",
+    "test": "interop/fixtures/wire-cases.json#schema-output-violation",
+    "removalCondition": "Remove if output-validation diagnostic prose becomes interoperable protocol data."
+  },
+  {
+    "case": "meta-required-capability-missing",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/index.mdx:484-501",
+    "referenceObservation": "SDK 2.3.1 explains the missing sampling capability using input-request-specific prose.",
+    "javaDecision": "Assert HTTP 400/-32021 and exact requiredCapabilities data; ignore only the non-normative message.",
+    "test": "interop/fixtures/wire-cases.json#meta-required-capability-missing",
+    "removalCondition": "Remove if exact error prose becomes normative."
+  },
+  {
+    "case": "http-custom-header-missing",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/transports/streamable-http.mdx:524-566",
+    "referenceObservation": "SDK 2.3.1 includes detailed optional header mismatch data and implementation-specific prose.",
+    "javaDecision": "Assert HTTP 400/-32020 and ignore only optional error.data and message.",
+    "test": "interop/fixtures/wire-cases.json#http-custom-header-missing",
+    "removalCondition": "Remove if the specification fixes an exact mismatch detail schema."
+  },
+  {
+    "case": "http-custom-header-malformed-base64",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/transports/streamable-http.mdx:483-516",
+    "referenceObservation": "SDK 2.3.1 includes detailed optional malformed-header data and implementation-specific prose.",
+    "javaDecision": "Assert HTTP 400/-32020 and ignore only optional error.data and message.",
+    "test": "interop/fixtures/wire-cases.json#http-custom-header-malformed-base64",
+    "removalCondition": "Remove if the specification fixes an exact malformed-encoding detail schema."
+  },
+  {
+    "case": "limits-json-depth",
+    "sourceClause": "docs/specification.md#protocol-contract-and-requirement-ids (P09)",
+    "referenceObservation": "SDK 2.3.1 parses the deeply nested body and then rejects the tool input through its configured 64-element tool bound as a complete isError result.",
+    "javaDecision": "Reject while parsing at configured JSON depth 64 with HTTP 400/-32700; assert each implementation without structural differential comparison.",
+    "test": "interop/fixtures/wire-cases.json#limits-json-depth",
+    "removalCondition": "Remove when the pinned Node transport exposes and applies the same JSON nesting limit."
+  },
+  {
+    "case": "deadline-timeout-after-commit",
+    "sourceClause": "docs/interop.md#equality-rules-and-initial-scenario-inventory (state)",
+    "referenceObservation": "SDK 2.3.1 has no incoming server request-deadline option in createMcpHandler and completes this 250 ms fixture call.",
+    "javaDecision": "Run Java with a 100 ms request timeout, assert HTTP 408/-32000, and verify the already committed mutation executed once; the reference establishes the no-timeout control observation.",
+    "test": "interop/fixtures/wire-cases.json#deadline-timeout-after-commit",
+    "removalCondition": "Remove the split assertion if the reference server gains an equivalent incoming absolute deadline option."
+  },
+  {
+    "case": "wire-empty-body,wire-whitespace-body",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/index.mdx:84-108",
+    "referenceObservation": "SDK 2.3.1 uses implementation parse prose and id:null when an empty or whitespace-only body has no readable request id.",
+    "javaDecision": "Assert HTTP 400/-32700 with no id; ignore only message and the reference's null id.",
+    "test": "interop/fixtures/wire-cases.json#wire-empty-body",
+    "removalCondition": "Remove when the reference omits the non-RequestId null or exact parse prose becomes normative."
+  },
+  {
+    "case": "wire-id-fraction-rejected",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/index.mdx:39-48",
+    "referenceObservation": "SDK 2.3.1 rejects id 1.5 with -32600 but echoes the invalid fractional number as the response id.",
+    "javaDecision": "Omit the invalid id under the integer-only RequestId schema; compare status and code while ignoring only the id and prose.",
+    "test": "interop/fixtures/wire-cases.json#wire-id-fraction-rejected",
+    "removalCondition": "Remove when the reference stops emitting a fractional response id or the RequestId schema changes."
+  },
+  {
+    "case": "http-name-header-missing,http-name-header-malformed,http-name-header-required-before-malformed-body",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/transports/streamable-http.mdx:246-260,483-516",
+    "referenceObservation": "SDK 2.3.1 supplies adapter-specific header-validation prose and optional mismatch data; it validates a malformed call body before the missing Mcp-Name header.",
+    "javaDecision": "Assert the stable 400/-32020 header contract and validate required routing headers before the body; ignore only optional prose/data, with split assertions for the validation-order case.",
+    "test": "interop/fixtures/wire-cases.json#http-name-header-missing",
+    "removalCondition": "Remove when header error detail and validation order are fixed by the protocol or aligned by the pinned adapter."
+  },
+  {
+    "case": "wire-notification-rejected-no-execution",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/transports/streamable-http.mdx:93-101",
+    "referenceObservation": "SDK 2.3.1 accepts the id-less unsupported notification with HTTP 202 and no body, while executing no handler.",
+    "javaDecision": "Reject unsupported client-to-server notifications before dispatch with HTTP 404/-32601 and no id; both lanes assert zero execution.",
+    "test": "interop/fixtures/wire-cases.json#wire-notification-rejected-no-execution",
+    "removalCondition": "Remove when the pinned adapter rejects unsupported client notifications or the profile permits them."
+  },
+  {
+    "case": "call-arguments-null-rejected,call-arguments-array-rejected",
+    "sourceClause": "spec/upstream/schema.json:$defs.CallToolRequestParams",
+    "referenceObservation": "SDK 2.3.1 emits Zod-specific malformed CallToolRequest prose for null or non-object arguments.",
+    "javaDecision": "Assert HTTP 200/-32602 and the preserved request id; ignore only implementation-specific message and optional detail data.",
+    "test": "interop/fixtures/wire-cases.json#call-arguments-null-rejected",
+    "removalCondition": "Remove if malformed-request diagnostic prose becomes interoperable protocol data."
+  },
+  {
+    "case": "call-name-missing-rejected",
+    "sourceClause": "spec/upstream/schema.json:$defs.CallToolRequestParams; spec/upstream/docs/specification/2026-07-28/basic/transports/streamable-http.mdx:246-260",
+    "referenceObservation": "SDK 2.3.1 validates the missing params.name as a malformed call and returns HTTP 200/-32602 before applying Mcp-Name equality.",
+    "javaDecision": "Validate the routing header against the body first and return HTTP 400/-32020 with the readable id; compare the two source-supported rejection paths separately.",
+    "test": "interop/fixtures/wire-cases.json#call-name-missing-rejected",
+    "removalCondition": "Remove when the transport validation order is normative or the pinned adapter applies header equality first."
+  },
+  {
+    "case": "schema-bounded-pattern-invalid",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/server/tools.mdx:740-779",
+    "referenceObservation": "The pinned reference and Java bounded validator emit different non-normative regex validation prose for the same short invalid value.",
+    "javaDecision": "Assert complete isError true and no handler success text; ignore only content[0].text.",
+    "test": "interop/fixtures/wire-cases.json#schema-bounded-pattern-invalid",
+    "removalCondition": "Remove if validator diagnostic prose becomes interoperable protocol data."
+  },
+  {
+    "case": "wire-utf16le-bom-rejected,wire-utf16be-bom-rejected",
+    "sourceClause": "docs/specification.md#protocol-contract-and-requirement-ids (P01)",
+    "referenceObservation": "SDK 2.3.1 rejects UTF-16LE/BE BOM request bytes with HTTP 400/-32700 and emits the non-RequestId value id:null; no handler executes.",
+    "javaDecision": "Reject non-UTF-8 request bytes with HTTP 400/-32700, omit id, and assert zero execution; the schema oracle exempts only /id=null for these exact reference cases/status/code.",
+    "test": "interop/fixtures/wire-cases.json#wire-utf16le-bom-rejected",
+    "removalCondition": "Remove when the pinned adapter omits null from its parse-error envelope."
+  },
+  {
+    "case": "wire-invalid-utf8-rejected",
+    "sourceClause": "docs/specification.md#protocol-contract-and-requirement-ids (P01)",
+    "referenceObservation": "Node's request decoder replaces an invalid UTF-8 byte inside a JSON string with U+FFFD, then SDK 2.3.1 executes the call and returns HTTP 200 complete.",
+    "javaDecision": "Strictly reject malformed UTF-8 with HTTP 400/-32700, omit id, and assert zero execution; compare each lane separately because replacement decoding changes business input.",
+    "test": "interop/fixtures/wire-cases.json#wire-invalid-utf8-rejected",
+    "removalCondition": "Remove when the pinned Node transport rejects malformed UTF-8 before JSON parsing."
+  },
+  {
+    "case": "identity-query-token-rejected",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/authorization/security-considerations.mdx:116-128",
+    "referenceObservation": "The pinned Node adapter matches its configured path literally and returns an empty HTTP 404 when the same path has an access_token query string.",
+    "javaDecision": "Reject query credentials as unauthenticated with HTTP 401/-32001; both outcomes prove the query value never authenticates, so compare the assertions separately.",
+    "test": "interop/fixtures/wire-cases.json#identity-query-token-rejected",
+    "removalCondition": "Remove when the adapter routes query-bearing requests through its authentication callback."
+  },
+  {
+    "case": "wire-response-direction-rejected",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/transports/streamable-http.mdx:70-101",
+    "referenceObservation": "SDK 2.3.1 rejects a client-to-server JSON-RPC response with generic malformed-envelope prose and id:null.",
+    "javaDecision": "Reject with HTTP 400/-32600 while preserving the readable request id; ignore only prose and the reference's null id.",
+    "test": "interop/fixtures/wire-cases.json#wire-response-direction-rejected",
+    "removalCondition": "Remove when the reference preserves the readable id or the response-direction error envelope is standardized."
+  },
+  {
+    "case": "meta-capability-not-sticky",
+    "sourceClause": "spec/upstream/schema.json:$defs.RequestMetaObject; spec/upstream/docs/specification/2026-07-28/basic/index.mdx:484-501",
+    "referenceObservation": "SDK 2.3.1 rejects the second invocation without sampling after a successful invocation declaring sampling, using input-request-specific prose.",
+    "javaDecision": "Assert HTTP 400/-32021 and exact requiredCapabilities data independently for both requests; ignore only non-normative error.message.",
+    "test": "interop/fixtures/wire-cases.json#meta-capability-not-sticky",
+    "removalCondition": "Remove if exact capability error prose becomes normative or both implementations align diagnostics."
+  },
+  {
+    "case": "mrtr-elicitation-round-trip,mrtr-multiple-inputs,stream-elicitation-has-no-independent-request,mrtr-cross-principal-state",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/patterns/mrtr.mdx: Request State",
+    "referenceObservation": "Both hosts generate different opaque requestState handles.",
+    "javaDecision": "Validate a nonempty opaque state, retain it verbatim in evidence, use the saved value on every subsequent input; exclude only the listed exact response paths from cross-server equality.",
+    "test": "New raw MRTR/stream cases and McpInteractionsTest",
+    "removalCondition": "Compare concrete tokens only if both hosts intentionally share the same state store (not this topology)."
+  },
+  {
+    "case": "tasks-create-and-complete,tasks-input-update,tasks-cancel,tasks-cross-principal-get,tasks-domain-error,tasks-protocol-error,tasks-poll-capability-not-sticky,tasks-suppress-request-notifications",
+    "sourceClause": "spec/upstream/docs/seps/2663-tasks-extension.mdx: Task and CreateTaskResult; base Result extensibility in spec/upstream/schema.json",
+    "referenceObservation": "Task IDs and creation/update wall clocks differ between independent hosts; pinned SDK normalizes a contentless tools/call task handle to add content: [].",
+    "javaDecision": "Validate task types, TTL/status, ISO times, stable ID/creation-time correlation and status-specific payloads; retain all raw values. Exclude only listed exact ID/time paths and SDK empty content from creation.",
+    "test": "Tasks raw creation/get/update/cancel sequences and independent Tasks v2 response oracle",
+    "removalCondition": "Remove SDK content exclusion when pinned SDK recognizes Tasks v2; opaque IDs/time remain separate-host transport noise."
+  },
+  {
+    "case": "prompt-get-missing-required-argument",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/server/prompts.mdx: Error Handling",
+    "referenceObservation": "Zod and Java explain a missing required argument differently.",
+    "javaDecision": "Keep status 200, JSON-RPC -32602 and exact response id; omit only diagnostic message equality in this case.",
+    "test": "prompt-get-missing-required-argument",
+    "removalCondition": "Remove if upstream error prose is standardized or both validators align."
+  },
+  {
+    "case": "tasks-required-capability,tasks-poll-capability-not-sticky",
+    "sourceClause": "spec/upstream/docs/seps/2663-tasks-extension.mdx: Capability Negotiation",
+    "referenceObservation": "SDK MissingRequiredClientCapabilityError lists the missing capability family in its prose.",
+    "javaDecision": "Preserve standardized HTTP/code/id/data; exclude only this error message.",
+    "test": "tasks-required-capability",
+    "removalCondition": "Remove if error prose is standardized or upstream phrase aligns."
+  },
+  {
+    "case": "mrtr-tampered-state,mrtr-cross-principal-state",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/patterns/mrtr.mdx: Server Requirements (Basic Workflow), state integrity; spec/upstream/schema.json: JSONRPCErrorResponse optional error.data",
+    "referenceObservation": "SDK adds exactly error.data.reason=invalid_request_state to an invalid or cross-owner requestState rejection.",
+    "javaDecision": "Both reject with -32602 and exact readable id; validate the reference data object exactly, exclude only optional error.data on these two cases.",
+    "test": "mrtr-tampered-state,mrtr-cross-principal-state",
+    "removalCondition": "Remove if the optional reason is standardized or both implementations align."
+  },
+  {
+    "case": "mrtr-forged-initial-tool",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/patterns/mrtr.mdx: state integrity and bound continuation policy; spec/upstream/docs/specification/2026-07-28/server/tools.mdx: tool execution errors",
+    "referenceObservation": "The native high-level SDK wraps the fixture ProtocolError for unbound forged inputResponses as an exact complete isError tool result; no greeting or action completes.",
+    "javaDecision": "Reject before handler invocation with JSON-RPC -32602. Independently assert both rejection outputs; retain this error-family difference rather than claiming equality.",
+    "test": "mrtr-forged-initial-tool; McpInteractionsTest#rejectsUnboundInputResponsesBeforeInvokingToolPromptOrResourceHandlers",
+    "removalCondition": "Remove if the high-level SDK preserves the fixture ProtocolError or native pre-handler state validation becomes configurable."
+  },
+  {
+    "case": "mrtr-forged-initial-prompt",
+    "sourceClause": "spec/upstream/docs/specification/2026-07-28/basic/patterns/mrtr.mdx: state integrity; spec/upstream/schema.json: JSONRPCErrorResponse",
+    "referenceObservation": "The two secure fixtures describe an unsolicited initial response differently.",
+    "javaDecision": "Both reject with -32602 and the same readable id; omit only diagnostic prose for this exact case.",
+    "test": "mrtr-forged-initial-prompt",
+    "removalCondition": "Remove if diagnostic wording aligns."
+  }
+]

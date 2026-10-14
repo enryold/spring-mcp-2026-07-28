@@ -1,0 +1,9 @@
+plugins { alias(libs.plugins.spring.boot) }
+dependencies {
+    implementation project(':mcp-2026-spring-boot-starter')
+    testImplementation libs.spring.boot.test
+}
+
+processResources {
+    from(rootProject.file('interop/fixtures/tool-contract.json'))
+}

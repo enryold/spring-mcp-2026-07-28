@@ -1,0 +1,18 @@
+plugins { id 'java' }
+repositories {
+    maven { url = uri(providers.gradleProperty('mcpRepository').get()) }
+    mavenCentral()
+}
+java { toolchain { languageVersion = JavaLanguageVersion.of(21) } }
+configurations.configureEach { resolutionStrategy.cacheChangingModulesFor 0, 'seconds' }
+def bootVersion = providers.gradleProperty('bootVersion').getOrElse('4.0.8')
+dependencies {
+    implementation enforcedPlatform("org.springframework.boot:spring-boot-dependencies:${bootVersion}")
+    implementation 'io.github.enryold:mcp-2026-spring-boot-starter:0.1.0-SNAPSHOT'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+test {
+    useJUnitPlatform()
+    systemProperty 'expectedBootVersion', bootVersion
+}

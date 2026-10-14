@@ -1,0 +1,264 @@
+[
+  {
+    "id": "resources-list",
+    "requirements": [
+      "P13.01",
+      "P10.03"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "resources/list",
+      "id": "resources-list",
+      "params": {}
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "cacheScope": "private",
+      "ttlMs": 0,
+      "resultPath": {
+        "resources": [
+          {
+            "name": "static-binary",
+            "title": "Static Binary Resource",
+            "description": "A static binary resource (image) for testing",
+            "mimeType": "image/png",
+            "uri": "test://static-binary"
+          },
+          {
+            "name": "static-text",
+            "title": "Static Text Resource",
+            "description": "A static text resource for testing",
+            "mimeType": "text/plain",
+            "uri": "test://static-text"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "resource-templates-list",
+    "requirements": [
+      "P13.02",
+      "P10.03"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "resources/templates/list",
+      "id": "templates-list",
+      "params": {}
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "cacheScope": "private",
+      "ttlMs": 0,
+      "resultPath": {
+        "resourceTemplates": [
+          {
+            "name": "template",
+            "title": "Resource Template",
+            "description": "A resource template with parameter substitution",
+            "mimeType": "application/json",
+            "uriTemplate": "test://template/{id}/data"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "resource-read-text",
+    "requirements": [
+      "P13.03",
+      "P10.03"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "resources/read",
+      "mcpName": "test://static-text",
+      "id": "read-text",
+      "params": {
+        "uri": "test://static-text"
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "cacheScope": "private",
+      "ttlMs": 0,
+      "resultPath": {
+        "contents": [
+          {
+            "uri": "test://static-text",
+            "mimeType": "text/plain",
+            "text": "This is the content of the static text resource."
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "resource-read-template",
+    "requirements": [
+      "P13.03"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "resources/read",
+      "mcpName": "test://template/123/data",
+      "id": "read-template",
+      "params": {
+        "uri": "test://template/123/data"
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "resultPath": {
+        "contents": [
+          {
+            "uri": "test://template/123/data",
+            "mimeType": "application/json",
+            "text": "{\"id\":\"123\",\"templateTest\":true,\"data\":\"Data for ID: 123\"}"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "resource-read-missing",
+    "requirements": [
+      "P13.04"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "resources/read",
+      "mcpName": "test://missing",
+      "id": "read-missing",
+      "params": {
+        "uri": "test://missing"
+      }
+    },
+    "assert": {
+      "status": 200,
+      "errorCode": -32602,
+      "errorDataPath": {
+        "uri": "test://missing"
+      }
+    }
+  },
+  {
+    "id": "prompts-list",
+    "requirements": [
+      "P14.01",
+      "P10.03"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "prompts/list",
+      "id": "prompts-list",
+      "params": {}
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "cacheScope": "private",
+      "ttlMs": 0
+    }
+  },
+  {
+    "id": "prompt-get-arguments",
+    "requirements": [
+      "P14.02"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "prompts/get",
+      "mcpName": "test_prompt_with_arguments",
+      "id": "prompt-arguments",
+      "params": {
+        "name": "test_prompt_with_arguments",
+        "arguments": {
+          "arg1": "testValue1",
+          "arg2": "testValue2"
+        }
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "resultPath": {
+        "messages": [
+          {
+            "role": "user",
+            "content": {
+              "type": "text",
+              "text": "Prompt with arguments: arg1='testValue1', arg2='testValue2'"
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "prompt-get-missing-required-argument",
+    "requirements": [
+      "P14.03"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "prompts/get",
+      "mcpName": "test_prompt_with_arguments",
+      "id": "prompt-invalid",
+      "params": {
+        "name": "test_prompt_with_arguments",
+        "arguments": {
+          "arg1": "testValue1"
+        }
+      }
+    },
+    "assert": {
+      "status": 200,
+      "errorCode": -32602
+    },
+    "ignorePaths": [
+      "$body.error.message"
+    ]
+  },
+  {
+    "id": "completion-prompt",
+    "requirements": [
+      "P15.01",
+      "P10.03"
+    ],
+    "profile": "conformance",
+    "request": {
+      "mcpMethod": "completion/complete",
+      "id": "complete-prompt",
+      "params": {
+        "ref": {
+          "type": "ref/prompt",
+          "name": "test_prompt_with_arguments"
+        },
+        "argument": {
+          "name": "arg1",
+          "value": "test"
+        }
+      }
+    },
+    "assert": {
+      "status": 200,
+      "resultType": "complete",
+      "resultPath": {
+        "completion": {
+          "values": [
+            "testValue1",
+            "testValue2"
+          ],
+          "total": 2,
+          "hasMore": false
+        }
+      }
+    }
+  }
+]

@@ -1,0 +1,418 @@
+[
+  {
+    "id": "stream-progress",
+    "profile": "conformance",
+    "requirements": [
+      "P17.01"
+    ],
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_tool_with_progress",
+      "id": "progress-call",
+      "params": {
+        "name": "test_tool_with_progress",
+        "arguments": {}
+      },
+      "meta": {
+        "progressToken": "progress-token-1"
+      }
+    },
+    "assert": {
+      "status": 200,
+      "contentType": "text/event-stream",
+      "messageMethods": [
+        "notifications/progress",
+        "notifications/progress",
+        "notifications/progress"
+      ],
+      "progressToken": "progress-token-1",
+      "progressValues": [
+        0,
+        50,
+        100
+      ],
+      "terminalId": "progress-call"
+    }
+  },
+  {
+    "id": "stream-requested-log",
+    "profile": "conformance",
+    "requirements": [
+      "P17.02"
+    ],
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_logging_tool",
+      "id": "log-call",
+      "params": {
+        "name": "test_logging_tool",
+        "arguments": {}
+      },
+      "meta": {
+        "io.modelcontextprotocol/logLevel": "info"
+      }
+    },
+    "assert": {
+      "status": 200,
+      "contentType": "text/event-stream",
+      "messageMethods": [
+        "notifications/message"
+      ],
+      "logLevels": [
+        "info"
+      ],
+      "terminalId": "log-call"
+    }
+  },
+  {
+    "id": "stream-no-unrequested-log",
+    "profile": "conformance",
+    "requirements": [
+      "P17.02"
+    ],
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_logging_tool",
+      "id": "no-log-call",
+      "params": {
+        "name": "test_logging_tool",
+        "arguments": {}
+      }
+    },
+    "assert": {
+      "status": 200,
+      "contentType": "text/event-stream",
+      "forbiddenMethods": [
+        "notifications/message",
+        "notifications/progress"
+      ],
+      "terminalId": "no-log-call"
+    }
+  },
+  {
+    "id": "stream-elicitation-has-no-independent-request",
+    "profile": "conformance",
+    "requirements": [
+      "P17.01"
+    ],
+    "request": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_streaming_elicitation",
+      "id": "elicitation-call",
+      "params": {
+        "name": "test_streaming_elicitation",
+        "arguments": {}
+      },
+      "clientCapabilities": {
+        "elicitation": {}
+      }
+    },
+    "assert": {
+      "status": 200,
+      "contentType": "text/event-stream",
+      "terminalId": "elicitation-call",
+      "forbiddenIndependentRequests": true,
+      "resultType": "input_required",
+      "resultPresentPaths": [
+        "inputRequests.elicitation",
+        "requestState"
+      ],
+      "stringResultPaths": [
+        "requestState"
+      ]
+    },
+    "ignorePaths": [
+      "$body.result.requestState",
+      "$messages.0.result.requestState"
+    ]
+  },
+  {
+    "id": "subscription-filtered-tool-change",
+    "profile": "conformance",
+    "requirements": [
+      "P17.03"
+    ],
+    "request": {
+      "mcpMethod": "subscriptions/listen",
+      "id": "tools-subscription",
+      "params": {
+        "notifications": {
+          "toolsListChanged": true,
+          "promptsListChanged": false
+        }
+      }
+    },
+    "afterAck": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_trigger_tool_change",
+      "id": "publish-change",
+      "params": {
+        "name": "test_trigger_tool_change",
+        "arguments": {}
+      }
+    },
+    "assert": {
+      "status": 200,
+      "contentType": "text/event-stream",
+      "messageMethods": [
+        "notifications/subscriptions/acknowledged",
+        "notifications/tools/list_changed"
+      ],
+      "forbiddenMethods": [
+        "notifications/prompts/list_changed"
+      ],
+      "subscriptionId": "tools-subscription"
+    }
+  },
+  {
+    "id": "subscription-prompt-change",
+    "profile": "conformance",
+    "requirements": [
+      "P17.03"
+    ],
+    "request": {
+      "mcpMethod": "subscriptions/listen",
+      "id": "prompts-subscription",
+      "params": {
+        "notifications": {
+          "toolsListChanged": false,
+          "promptsListChanged": true
+        }
+      }
+    },
+    "afterAck": {
+      "mcpMethod": "tools/call",
+      "mcpName": "test_trigger_prompt_change",
+      "id": "trigger-prompt-change",
+      "params": {
+        "name": "test_trigger_prompt_change",
+        "arguments": {}
+      }
+    },
+    "assert": {
+      "status": 200,
+      "contentType": "text/event-stream",
+      "messageMethods": [
+        "notifications/subscriptions/acknowledged",
+        "notifications/prompts/list_changed"
+      ],
+      "forbiddenMethods": [
+        "notifications/tools/list_changed"
+      ],
+      "subscriptionId": "prompts-subscription"
+    }
+  },
+  {
+    "id": "subscription-resource-list-change",
+    "profile": "conformance",
+    "requirements": [
+      "P17.03"
+    ],
+    "request": {
+      "mcpMethod": "subscriptions/listen",
+      "id": "resources-list-subscription",
+      "params": {
+        "notifications": {
+          "resourcesListChanged": true
+        }
+      }
+    },
+    "afterAck": [
+      {
+        "mcpMethod": "tools/call",
+        "mcpName": "test_trigger_resource_change",
+        "id": "trigger-resource-change",
+        "params": {
+          "name": "test_trigger_resource_change",
+          "arguments": {}
+        }
+      }
+    ],
+    "assert": {
+      "status": 200,
+      "contentType": "text/event-stream",
+      "messageMethods": [
+        "notifications/subscriptions/acknowledged",
+        "notifications/resources/list_changed"
+      ],
+      "subscriptionId": "resources-list-subscription"
+    }
+  },
+  {
+    "id": "subscription-resource-update-filter",
+    "profile": "conformance",
+    "requirements": [
+      "P17.03"
+    ],
+    "request": {
+      "mcpMethod": "subscriptions/listen",
+      "id": "resource-update-subscription",
+      "params": {
+        "notifications": {
+          "resourceSubscriptions": [
+            "test://static-text"
+          ]
+        }
+      }
+    },
+    "afterAck": [
+      {
+        "mcpMethod": "tools/call",
+        "mcpName": "test_trigger_resource_update",
+        "id": "trigger-resource-update",
+        "params": {
+          "name": "test_trigger_resource_update",
+          "arguments": {}
+        }
+      }
+    ],
+    "assert": {
+      "status": 200,
+      "contentType": "text/event-stream",
+      "messageMethods": [
+        "notifications/subscriptions/acknowledged",
+        "notifications/resources/updated"
+      ],
+      "resourceUris": [
+        "test://static-text"
+      ],
+      "subscriptionId": "resource-update-subscription"
+    }
+  },
+  {
+    "id": "subscription-resource-update-exact-filter",
+    "profile": "conformance",
+    "requirements": [
+      "P17.03"
+    ],
+    "request": {
+      "mcpMethod": "subscriptions/listen",
+      "id": "resource-update-excluded",
+      "params": {
+        "notifications": {
+          "resourceSubscriptions": [
+            "test://static-binary"
+          ]
+        }
+      }
+    },
+    "afterAck": [
+      {
+        "mcpMethod": "tools/call",
+        "mcpName": "test_trigger_resource_update",
+        "id": "trigger-excluded-resource-update",
+        "params": {
+          "name": "test_trigger_resource_update",
+          "arguments": {}
+        }
+      }
+    ],
+    "assert": {
+      "status": 200,
+      "contentType": "text/event-stream",
+      "messageMethods": [
+        "notifications/subscriptions/acknowledged"
+      ],
+      "forbiddenMethods": [
+        "notifications/resources/updated"
+      ],
+      "resourceUris": [],
+      "subscriptionId": "resource-update-excluded"
+    }
+  },
+  {
+    "id": "subscription-resource-identity-isolation",
+    "profile": "conformance",
+    "requirements": [
+      "P17.03"
+    ],
+    "request": {
+      "token": "alice-read",
+      "mcpMethod": "subscriptions/listen",
+      "id": "alice-resource-subscription",
+      "params": {
+        "notifications": {
+          "resourceSubscriptions": [
+            "test://static-text"
+          ]
+        }
+      }
+    },
+    "afterAck": [
+      {
+        "token": "bob-write",
+        "mcpMethod": "tools/call",
+        "mcpName": "test_trigger_resource_update",
+        "id": "bob-resource-update",
+        "params": {
+          "name": "test_trigger_resource_update",
+          "arguments": {}
+        }
+      },
+      {
+        "token": "alice-read",
+        "mcpMethod": "tools/call",
+        "mcpName": "test_trigger_resource_update",
+        "id": "alice-resource-update",
+        "params": {
+          "name": "test_trigger_resource_update",
+          "arguments": {}
+        }
+      }
+    ],
+    "assert": {
+      "status": 200,
+      "contentType": "text/event-stream",
+      "messageMethods": [
+        "notifications/subscriptions/acknowledged",
+        "notifications/resources/updated"
+      ],
+      "resourceUris": [
+        "test://static-text"
+      ],
+      "subscriptionId": "alice-resource-subscription"
+    }
+  },
+  {
+    "id": "stream-parallel-progress",
+    "profile": "conformance",
+    "requirements": [
+      "P17.01",
+      "P17.03"
+    ],
+    "parallelRequests": [
+      {
+        "mcpMethod": "tools/call",
+        "mcpName": "test_tool_with_progress",
+        "id": "parallel-a",
+        "params": {
+          "name": "test_tool_with_progress",
+          "arguments": {}
+        },
+        "meta": {
+          "progressToken": "parallel-token-a"
+        }
+      },
+      {
+        "mcpMethod": "tools/call",
+        "mcpName": "test_tool_with_progress",
+        "id": "parallel-b",
+        "params": {
+          "name": "test_tool_with_progress",
+          "arguments": {}
+        },
+        "meta": {
+          "progressToken": "parallel-token-b"
+        }
+      }
+    ],
+    "assert": {
+      "status": 200,
+      "contentType": "text/event-stream",
+      "isolatedProgressTokens": [
+        "parallel-token-a",
+        "parallel-token-b"
+      ]
+    }
+  }
+]

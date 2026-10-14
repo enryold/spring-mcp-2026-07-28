@@ -1,0 +1,18 @@
+plugins { id 'maven-publish' }
+dependencies {
+    api platform(libs.spring.boot.bom)
+    api libs.jackson.databind
+    implementation libs.json.schema
+    implementation libs.re2j
+}
+tasks.named('processResources') {
+    from(rootProject.file('spec/upstream/schema.json')) {
+        into 'io/github/enryold/mcp'
+        rename { 'schema-2026-07-28.json' }
+    }
+    from(rootProject.file('spec/upstream/MCP-LICENSE')) {
+        into 'META-INF/licenses'
+        rename { 'MCP-SCHEMA-LICENSE' }
+    }
+}
+publishing { publications { mavenJava(MavenPublication) { from components.java } } }

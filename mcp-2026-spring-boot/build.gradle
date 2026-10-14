@@ -1,0 +1,17 @@
+plugins { id 'maven-publish' }
+dependencies {
+    api platform(libs.spring.boot.bom)
+    implementation libs.spring.boot.autoconfigure
+    compileOnly project(':mcp-2026-core')
+    compileOnly libs.spring.webmvc
+    compileOnly libs.servlet.api
+    compileOnly libs.spring.security.core
+    annotationProcessor libs.spring.boot.configuration.processor
+    annotationProcessor libs.spring.boot.autoconfigure.processor
+    testImplementation project(':mcp-2026-core')
+    testImplementation libs.spring.boot.webmvc
+    testImplementation libs.spring.boot.test
+    testImplementation libs.spring.security.test
+    testImplementation libs.spring.boot.oauth2.resource.server
+}
+publishing { publications { mavenJava(MavenPublication) { from components.java } } }
