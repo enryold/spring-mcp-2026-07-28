@@ -8,6 +8,7 @@
 ### Outcome 1: Verified publication configuration
 - Work: Add `jitpack.yml`, retain native `io.github.enryold` coordinates, include MIT license metadata/notices, document JitPack's multi-module coordinates, and allow the existing external consumer to check them.
 - Verify: `devenv shell -- ./gradlew check build consumerSmokeTest consumerSmoke4_0_0 publishToMavenLocal`, `devenv shell -- npm --prefix interop run check`, archive/POM inspection, and a standalone starter consumer.
+- JitPack environment: the `openjdk21` alias failed to download its obsolete Java.net build before Gradle. Install the available SDKMAN Temurin `21.0.12+1.1-tem` explicitly through `before_install`; keep the release tag uncreated until the commit build succeeds.
 
 ### Outcome 2: Downloadable immutable tag
 - Work: Commit and push the publication configuration, verify JitPack's commit build, create/push annotated `v0.1.0`, and trigger its build.
