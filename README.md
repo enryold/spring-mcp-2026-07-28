@@ -29,6 +29,53 @@ These results apply to the pinned versions and server profile above, and do not 
 
 The [dated compatibility report](docs/compatibility.md), [requirement matrix](interop/fixtures/requirements.json) and [documented divergences](interop/fixtures/divergences.json) contain the evidence and limits. Stdio, client-role conformance, MCP Apps and legacy initialization are outside this project's supported profile. Capabilities are enabled through explicit registrations; startup rejects declarations without matching handlers.
 
+## Install from JitPack
+
+Requires Java 21 and a Spring Boot 4 MVC application. Use the starter module from tag **`v0.1.0`**.
+
+Gradle (`settings.gradle`):
+
+```groovy
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        maven {
+            url = uri('https://jitpack.io')
+            content { includeGroup('com.github.enryold.spring-mcp-2026-07-28') }
+        }
+    }
+}
+```
+
+Gradle (`build.gradle`):
+
+```groovy
+dependencies {
+    implementation 'com.github.enryold.spring-mcp-2026-07-28:mcp-2026-spring-boot-starter:v0.1.0'
+}
+```
+
+Maven (`pom.xml`):
+
+```xml
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+
+<dependencies>
+    <dependency>
+        <groupId>com.github.enryold.spring-mcp-2026-07-28</groupId>
+        <artifactId>mcp-2026-spring-boot-starter</artifactId>
+        <version>v0.1.0</version>
+    </dependency>
+</dependencies>
+```
+
+JitPack uses [multi-module coordinates](https://docs.jitpack.io/building/#multi-module-projects); the native publication group remains `io.github.enryold`, and Java packages remain `io.github.enryold.mcp`. The starter brings in core and Spring integration; the sample application is not published. See the [JitPack build](https://jitpack.io/#enryold/spring-mcp-2026-07-28/v0.1.0). Enable and secure the endpoint as described below.
+
 ## Run and verify locally
 
 Nix/devenv supplies Java 21, Node 24 and the pinned Gradle wrapper.
@@ -118,4 +165,4 @@ The sample binds loopback at port 18080 and uses invented identities/data. `fixt
 
 ## License
 
-Project-owned code is licensed under the [MIT License](LICENSE). Vendored specification and conformance inputs retain their upstream license notices in `spec/upstream/`. Library packages have not been published; product adoption remains separate work.
+Project-owned code is licensed under the [MIT License](LICENSE). Library archives include that license; vendored specification and conformance inputs retain their upstream notices. Distribution uses JitPack; product adoption remains separate work.

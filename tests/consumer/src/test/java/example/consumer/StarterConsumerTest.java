@@ -50,7 +50,7 @@ class StarterConsumerTest {
             assertThat(body.path("result").path("structuredContent").path("text").asString()).isEqualTo("Caffè ☕");
             assertThat(body.path("id").asString()).isEqualTo("consumer");
             assertThat(context.getBean(McpEngine.class).getClass().getProtectionDomain().getCodeSource()
-                    .getLocation().toString()).endsWith("mcp-2026-core-0.1.0-SNAPSHOT.jar");
+                    .getLocation().toString()).endsWith(System.getProperty("expectedCoreJar"));
         }
     }
 

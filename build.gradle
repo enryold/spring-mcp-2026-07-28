@@ -47,8 +47,21 @@ tasks.register('resolveDependencies') {
     dependsOn subprojects.collect { it.tasks.named('resolveDependencies') }
 }
 configure(subprojects.findAll { it.name != 'api-server' }) {
+    tasks.withType(Jar).configureEach {
+        from(rootProject.file('LICENSE')) { into 'META-INF/licenses' }
+    }
     plugins.withId('maven-publish') {
         publishing {
+            publications.withType(MavenPublication).configureEach {
+                pom {
+                    licenses {
+                        license {
+                            name = 'MIT License'
+                            url = 'https://github.com/enryold/spring-mcp-2026-07-28/blob/main/LICENSE'
+                        }
+                    }
+                }
+            }
             repositories {
                 maven {
                     name = 'Consumer'
@@ -84,6 +97,7 @@ tasks.register('verifyLibraryArtifacts') {
             def jarFile = library.tasks.named('jar').get().archiveFile.get().asFile
             new java.util.zip.ZipFile(jarFile).withCloseable { jar ->
                 assert !jar.entries().toList().any { it.name.startsWith('BOOT-INF/') }
+                assert jar.getInputStream(jar.getEntry('META-INF/licenses/LICENSE')).getText('UTF-8') == rootProject.file('LICENSE').text
                 if (library.name == 'mcp-2026-spring-boot') {
                     def imports = jar.getEntry('META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports')
                     assert imports != null
@@ -104,6 +118,7 @@ tasks.register('verifyLibraryArtifacts') {
                     library.layout.buildDirectory.file('publications/mavenJava/pom-default.xml').get().asFile)
             assert pom.groupId.text() == 'io.github.enryold'
             assert pom.artifactId.text() == library.name
+            assert pom.licenses.license.name.text() == 'MIT License'
             assert !pom.dependencies.dependency.any { it.artifactId.text().contains('api-server') }
             if (library.name == 'mcp-2026-core') {
                 assert pom.dependencies.dependency.find { it.artifactId.text() == 'json-schema-validator' }.scope.text() == 'runtime'
