@@ -6,6 +6,7 @@ Verified on 2026-10-14 against Maven Central, npm and the official repositories.
 | --- | --- | --- |
 | devenv | 2.2.2 module input | Reproducible local toolchain; use the installed 2.2.2 CLI |
 | JDK | 21, package revision in devenv.lock | Compile and run the Java library/sample |
+| JitPack JDK | Corretto 21.0.12.12.1, SHA-256 in jitpack.yml | Linux x64 cloud builder; direct verified download avoids failing SDKMAN downloads |
 | Node.js | 24, package revision in devenv.lock | TypeScript reference and wire tests |
 | Gradle | 9.0.0 + distribution SHA-256 | Wrapper build, no global Gradle installation |
 | Spring Boot BOM/plugin | 4.0.8 | Maintained 4.0 baseline, close to saas-boilerplate's 4.0 family |
